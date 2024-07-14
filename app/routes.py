@@ -1,7 +1,7 @@
 # app/routes.py
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db, bcrypt, mail
-from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm
+from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm
 from app.models import User, LoginActivity
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -9,6 +9,7 @@ from itsdangerous import URLSafeTimedSerializer as Serializer
 from wtforms import ValidationError
 import logging
 from datetime import datetime, timezone, timedelta
+import pyotp
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +93,21 @@ def login():
                 return redirect(url_for('login'))
             
             if bcrypt.check_password_hash(user.password, form.password.data):
-                user.failed_login_attempts = 0
-                db.session.commit()
-                login_user(user, remember=form.remember.data)
-                # Log login activity
-                login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
-                db.session.add(login_activity)
-                db.session.commit()
-                next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('home'))
+                if user.mfa_enabled:
+                    login_user(user, remember=form.remember.data)
+                    return redirect(url_for('mfa'))
+                else:
+                    login_user(user, remember=form.remember.data)
+                    if not user.mfa_enabled:
+                        return redirect(url_for('setup_mfa'))
+                    user.failed_login_attempts = 0
+                    db.session.commit()
+                    # Log login activity
+                    login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
+                    db.session.add(login_activity)
+                    db.session.commit()
+                    next_page = request.args.get('next')
+                    return redirect(next_page) if next_page else redirect(url_for('home'))
             else:
                 if user.failed_login_attempts is None:
                     user.failed_login_attempts = 0
@@ -114,6 +121,9 @@ def login():
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
+
+
+
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -156,7 +166,41 @@ def reset_token(token):
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form, token=token)
 
+@app.route("/setup_mfa", methods=['GET', 'POST'])
+@login_required
+def setup_mfa():
+    if not current_user.mfa_enabled:
+        current_user.mfa_secret = pyotp.random_base32()
+        db.session.commit()
+        flash('MFA setup initialized. Scan the QR code with your authenticator app.', 'info')
+    return render_template('setup_mfa.html', user=current_user)
 
+@app.route("/verify_mfa", methods=['GET', 'POST'])
+@login_required
+def verify_mfa():
+    form = MFAForm()
+    if form.validate_on_submit():
+        if current_user.verify_totp(form.token.data):
+            current_user.mfa_enabled = True
+            db.session.commit()
+            flash('MFA setup complete!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid MFA token', 'danger')
+    return render_template('verify_mfa.html', form=form)
+
+@app.route("/mfa", methods=['GET', 'POST'])
+@login_required
+def mfa():
+    form = MFAForm()
+    if form.validate_on_submit():
+        if current_user.verify_totp(form.token.data):
+            current_user.mfa_verified = True
+            db.session.commit()
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid MFA token', 'danger')
+    return render_template('mfa.html', form=form)
 
 
 @app.route("/logout")

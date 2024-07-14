@@ -4,6 +4,7 @@ from app import db, app
 from flask_login import UserMixin
 import logging
 from datetime import datetime, timezone, timedelta
+import pyotp  # For multi-factor authentication
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,8 @@ class User(db.Model, UserMixin):
     date_registered = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
     account_locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
+    mfa_secret = db.Column(db.String(32), default=lambda: pyotp.random_base32())
+    mfa_enabled = db.Column(db.Boolean, default=False)  # Add this line
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])
@@ -40,6 +43,13 @@ class User(db.Model, UserMixin):
         self.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)  # Lock for 15 minutes
         self.failed_login_attempts = 0
         db.session.commit()
+
+    def get_totp_uri(self):
+        return f'otpauth://totp/NexFitra:{self.email}?secret={self.mfa_secret}&issuer=NexFitra'
+
+    def verify_totp(self, token):
+        totp = pyotp.TOTP(self.mfa_secret)
+        return totp.verify(token)
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
