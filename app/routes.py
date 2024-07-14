@@ -2,12 +2,13 @@
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm
-from app.models import User
+from app.models import User, LoginActivity
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from wtforms import ValidationError
 import logging
+from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -85,10 +86,31 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('home'))
+        if user:
+            if user.account_locked_until and user.account_locked_until > datetime.now(timezone.utc):
+                flash('Account is locked. Try again later.', 'danger')
+                return redirect(url_for('login'))
+            
+            if bcrypt.check_password_hash(user.password, form.password.data):
+                user.failed_login_attempts = 0
+                db.session.commit()
+                login_user(user, remember=form.remember.data)
+                # Log login activity
+                login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
+                db.session.add(login_activity)
+                db.session.commit()
+                next_page = request.args.get('next')
+                return redirect(next_page) if next_page else redirect(url_for('home'))
+            else:
+                if user.failed_login_attempts is None:
+                    user.failed_login_attempts = 0
+                user.failed_login_attempts += 1
+                if user.failed_login_attempts >= 5:
+                    user.lock_account()
+                    flash('Account locked due to too many failed login attempts.', 'danger')
+                else:
+                    flash('Login Unsuccessful. Please check email and password', 'danger')
+                db.session.commit()
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)

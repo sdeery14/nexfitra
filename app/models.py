@@ -16,6 +16,8 @@ class User(db.Model, UserMixin):
     date_of_birth = db.Column(db.Date, nullable=True)
     confirmed = db.Column(db.Boolean, default=False)
     date_registered = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
+    account_locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])
@@ -33,6 +35,20 @@ class User(db.Model, UserMixin):
             logger.error(f"Token verification failed: {e}")
             return None
         return User.query.get(user_id)
+    
+    def lock_account(self):
+        self.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)  # Lock for 15 minutes
+        self.failed_login_attempts = 0
+        db.session.commit()
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}', '{self.image_file}')"
+
+class LoginActivity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    ip_address = db.Column(db.String(45))  # Supports IPv4 and IPv6
+    user_agent = db.Column(db.String(200))
+
+    user = db.relationship('User', backref='login_activities')
