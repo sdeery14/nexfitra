@@ -5,6 +5,8 @@ from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswo
 from app.models import User
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from wtforms import ValidationError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,18 +41,20 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
-def send_confirmation_email(user):
-    token = user.get_reset_token()
+def send_confirmation_email(user, confirm_url=None):
+    if confirm_url is None:
+        token = user.get_reset_token()
+        confirm_url = url_for('confirm_email', token=token, _external=True)
     msg = Message('Confirm Your Email',
                   sender=app.config['MAIL_DEFAULT_SENDER'],
                   recipients=[user.email])
     msg.body = f'''To confirm your email, visit the following link:
-{url_for('confirm_email', token=token, _external=True)}
+{confirm_url}
 
 If you did not make this request then simply ignore this email and no changes will be made.
 '''
     mail.send(msg)
-    logger.info(f"Sent confirmation email to {user.email} with token: {token}")  # Logging statement
+    logger.info(f"Sent confirmation email to {user.email} with URL: {confirm_url}")
 
 @app.route("/confirm_email/<token>")
 def confirm_email(token):

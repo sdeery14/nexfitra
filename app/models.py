@@ -3,6 +3,7 @@ from itsdangerous import URLSafeTimedSerializer as Serializer
 from app import db, app
 from flask_login import UserMixin
 import logging
+from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
     confirmed = db.Column(db.Boolean, default=False)
+    date_registered = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])

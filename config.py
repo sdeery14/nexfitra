@@ -15,4 +15,7 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+    SERVER_NAME = '127.0.0.1:5000'  # Replace with your domain
+    APPLICATION_ROOT = '/'
+    PREFERRED_URL_SCHEME = 'http'
 
