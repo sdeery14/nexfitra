@@ -10,6 +10,7 @@ from wtforms import ValidationError
 import logging
 from datetime import datetime, timezone, timedelta
 import pyotp
+from app.decorators import email_confirmed_required
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +125,6 @@ def login():
 def make_session_permanent():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=30)
-
-
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -268,6 +267,7 @@ def confirm_email_change(token):
 
 @app.route("/login_activity")
 @login_required
+@email_confirmed_required
 def login_activity():
     activities = current_user.login_activities
     return render_template('login_activity.html', activities=activities)

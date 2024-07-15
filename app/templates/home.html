@@ -3,4 +3,9 @@
 {% block title %}NexFitra{% endblock %}
 {% block content %}
 <h1>Welcome to NexFitra</h1>
+{% if not current_user.confirmed %}
+    <div class="alert alert-warning" role="alert">
+        Please confirm your email address to unlock all features.
+    </div>
+{% endif %}
 {% endblock %}
