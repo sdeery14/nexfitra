@@ -93,21 +93,15 @@ def login():
                 return redirect(url_for('login'))
             
             if bcrypt.check_password_hash(user.password, form.password.data):
-                if user.mfa_enabled:
-                    login_user(user, remember=form.remember.data)
-                    return redirect(url_for('mfa'))
-                else:
-                    login_user(user, remember=form.remember.data)
-                    if not user.mfa_enabled:
-                        return redirect(url_for('setup_mfa'))
-                    user.failed_login_attempts = 0
-                    db.session.commit()
-                    # Log login activity
-                    login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
-                    db.session.add(login_activity)
-                    db.session.commit()
-                    next_page = request.args.get('next')
-                    return redirect(next_page) if next_page else redirect(url_for('home'))
+                user.failed_login_attempts = 0
+                db.session.commit()
+                login_user(user, remember=form.remember.data)
+                # Log login activity
+                login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
+                db.session.add(login_activity)
+                db.session.commit()
+                next_page = request.args.get('next')
+                return redirect(next_page) if next_page else redirect(url_for('home'))
             else:
                 if user.failed_login_attempts is None:
                     user.failed_login_attempts = 0
@@ -261,3 +255,9 @@ def confirm_email_change(token):
     except Exception as e:
         flash('Invalid or expired token.', 'danger')
     return redirect(url_for('account'))
+
+@app.route("/login_activity")
+@login_required
+def login_activity():
+    activities = current_user.login_activities
+    return render_template('login_activity.html', activities=activities)

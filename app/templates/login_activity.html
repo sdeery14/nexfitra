@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login Activity{% endblock %}
+{% block content %}
+<h1>Login Activity</h1>
+<table>
+    <tr>
+        <th>Timestamp</th>
+        <th>IP Address</th>
+        <th>User Agent</th>
+    </tr>
+    {% for activity in activities %}
+    <tr>
+        <td>{{ activity.timestamp }}</td>
+        <td>{{ activity.ip_address }}</td>
+        <td>{{ activity.user_agent }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

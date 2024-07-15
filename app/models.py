@@ -22,6 +22,8 @@ class User(db.Model, UserMixin):
     account_locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
     mfa_secret = db.Column(db.String(32), default=lambda: pyotp.random_base32())
     mfa_enabled = db.Column(db.Boolean, default=False)  # Add this line
+    active = db.Column(db.Boolean, default=True)
+    login_activities = db.relationship('LoginActivity', backref='user', lazy=True)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'])
@@ -61,5 +63,3 @@ class LoginActivity(db.Model):
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     ip_address = db.Column(db.String(45))  # Supports IPv4 and IPv6
     user_agent = db.Column(db.String(200))
-
-    user = db.relationship('User', backref='login_activities')
