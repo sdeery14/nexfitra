@@ -83,6 +83,13 @@ def confirm_email(token):
     flash('Your email has been confirmed!', 'success')
     return redirect(url_for('login'))
 
+@app.route("/resend_confirmation")
+@login_required
+def resend_confirmation():
+    send_confirmation_email(current_user)
+    flash('A new confirmation email has been sent.', 'info')
+    return redirect(url_for('account'))
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
