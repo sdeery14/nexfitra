@@ -6,6 +6,7 @@
     <div>
         {{ form.password.label }}<br>
         {{ form.password(size=32) }}<br>
+        <small>Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character.</small>
         {% if form.password.errors %}
             <ul>
             {% for error in form.password.errors %}

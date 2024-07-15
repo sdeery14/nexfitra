@@ -102,6 +102,8 @@ def login():
                 login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
                 db.session.add(login_activity)
                 db.session.commit()
+                if not user.mfa_enabled:
+                    return redirect(url_for('setup_mfa'))
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('home'))
             else:
