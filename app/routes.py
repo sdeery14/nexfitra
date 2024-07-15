@@ -1,5 +1,5 @@
 # app/routes.py
-from flask import render_template, url_for, flash, redirect, request
+from flask import render_template, url_for, flash, redirect, request, session
 from app import app, db, bcrypt, mail
 from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, UpdateAccountForm
 from app.models import User, LoginActivity
@@ -84,6 +84,8 @@ def confirm_email(token):
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -116,6 +118,10 @@ def login():
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=30)
 
 
 
@@ -200,7 +206,9 @@ def mfa():
 @app.route("/logout")
 def logout():
     logout_user()
-    return redirect(url_for('home'))
+    session.pop('remember', None)
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
 
 def send_email_change_confirmation(user, new_email):
     s = Serializer(app.config['SECRET_KEY'])

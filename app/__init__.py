@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
@@ -8,6 +8,7 @@ from config import Config
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -16,6 +17,7 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+login_manager.remember_cookie_duration = timedelta(days=7)
 mail = Mail(app)
 migrate = Migrate(app, db)
 
@@ -24,6 +26,11 @@ from app import routes, models, scheduler
 @login_manager.user_loader
 def load_user(user_id):
     return models.User.query.get(int(user_id))
+
+@app.before_request
+def make_session_permanent():
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(minutes=30)  # Set session lifetime
 
 # Configure logging
 if not app.debug:
