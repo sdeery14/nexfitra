@@ -15,7 +15,9 @@
         {% else %}
             <a href="{{ url_for('login') }}">Login</a>
             <a href="{{ url_for('register') }}">Register</a>
+            
         {% endif %}
+        <a href="{{ url_for('account') }}">Account</a>
     </nav>
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}

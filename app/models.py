@@ -16,6 +16,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
     confirmed = db.Column(db.Boolean, default=False)
+    email_change_pending = db.Column(db.String(120), nullable=True)  # Add this line
     date_registered = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
     account_locked_until = db.Column(db.DateTime(timezone=True), nullable=True)

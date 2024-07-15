@@ -85,6 +85,7 @@ form button:hover {
     margin-bottom: 20px;
     border-radius: 5px;
     color: #fff;
+    font-weight: bold;
 }
 
 .alert-success {
@@ -93,6 +94,15 @@ form button:hover {
 
 .alert-danger {
     background-color: #dc3545;
+}
+
+.alert-info {
+    background-color: #17a2b8;
+}
+
+.alert-warning {
+    background-color: #ffc107;
+    color: #343a40;
 }
 
 /* Home page styles */

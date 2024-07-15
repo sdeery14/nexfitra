@@ -1,7 +1,7 @@
 # app/routes.py
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db, bcrypt, mail
-from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm
+from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, UpdateAccountForm
 from app.models import User, LoginActivity
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -207,3 +207,57 @@ def mfa():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+def send_email_change_confirmation(user, new_email):
+    s = Serializer(app.config['SECRET_KEY'])
+    token = s.dumps({'user_id': user.id, 'new_email': new_email})
+    confirm_url = url_for('confirm_email_change', token=token, _external=True)
+    msg = Message('Confirm Your New Email Address',
+                  sender=app.config['MAIL_DEFAULT_SENDER'],
+                  recipients=[new_email])
+    msg.body = f'''To confirm your new email address, visit the following link:
+{confirm_url}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    mail.send(msg)
+
+@app.route("/account", methods=['GET', 'POST'])
+@login_required
+def account():
+    form = UpdateAccountForm()
+    if form.validate_on_submit():
+        if form.email.data != current_user.email:
+            current_user.email_change_pending = form.email.data
+            send_email_change_confirmation(current_user, form.email.data)
+            flash('A confirmation email has been sent to your new email address.', 'info')
+        current_user.username = form.username.data
+        if form.password.data:
+            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            current_user.password = hashed_password
+        db.session.commit()
+        flash('Your account has been updated!', 'success')
+        return redirect(url_for('account'))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    return render_template('account.html', title='Account', form=form)
+
+
+@app.route("/confirm_email_change/<token>")
+@login_required
+def confirm_email_change(token):
+    s = Serializer(app.config['SECRET_KEY'])
+    try:
+        data = s.loads(token)
+        user = User.query.get(data['user_id'])
+        if user and user == current_user:
+            user.email = data['new_email']
+            user.email_change_pending = None
+            db.session.commit()
+            flash('Your email address has been updated.', 'success')
+        else:
+            flash('Invalid or expired token.', 'danger')
+    except Exception as e:
+        flash('Invalid or expired token.', 'danger')
+    return redirect(url_for('account'))
