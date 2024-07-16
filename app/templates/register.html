@@ -16,14 +16,13 @@
     <div>
         {{ form.password.label }}<br>
         {{ form.password(size=32) }}<br>
-        <small>Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character.</small>
     </div>
     <div>
         {{ form.confirm_password.label }}<br>
         {{ form.confirm_password(size=32) }}<br>
     </div>
     <div>
-        {{ form.accept_tos() }} {{ form.accept_tos.label }}<br>
+        {{ form.accept_tos() }} I accept the <a href="{{ url_for('terms_of_service') }}" target="_blank">Terms of Service</a> and <a href="{{ url_for('privacy_policy') }}" target="_blank">Privacy Policy</a><br>
     </div>
     <div>
         {{ form.submit() }}

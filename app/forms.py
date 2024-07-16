@@ -27,11 +27,7 @@ from app.models import User
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[
-        DataRequired(),
-        Length(min=8, message='Password must be at least 8 characters long'),
-        Regexp(r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])', message='Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character')
-    ])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     accept_tos = BooleanField('I accept the Terms of Service and Privacy Policy', validators=[DataRequired()])
     submit = SubmitField('Sign Up')

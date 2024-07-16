@@ -19,6 +19,14 @@ logger = logging.getLogger(__name__)
 def home():
     return render_template('home.html')
 
+@app.route("/terms_of_service")
+def terms_of_service():
+    return render_template('terms_of_service.html')
+
+@app.route("/privacy_policy")
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
 @app.route("/register", methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
