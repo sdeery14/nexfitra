@@ -16,12 +16,13 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=True)
     confirmed = db.Column(db.Boolean, default=False)
-    email_change_pending = db.Column(db.String(120), nullable=True)  # Add this line
+    email_change_pending = db.Column(db.String(120), nullable=True)
     date_registered = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     failed_login_attempts = db.Column(db.Integer, default=0, nullable=False)
     account_locked_until = db.Column(db.DateTime(timezone=True), nullable=True)
     mfa_secret = db.Column(db.String(32), default=lambda: pyotp.random_base32())
-    mfa_enabled = db.Column(db.Boolean, default=False)  # Add this line
+    mfa_enabled = db.Column(db.Boolean, default=False)
+    mfa_skipped = db.Column(db.Boolean, default=False)
     active = db.Column(db.Boolean, default=True)
     login_activities = db.relationship('LoginActivity', backref='user', lazy=True)
 

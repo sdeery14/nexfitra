@@ -1,7 +1,7 @@
 # app/routes.py
 from flask import render_template, url_for, flash, redirect, request, session
 from app import app, db, bcrypt, mail
-from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, UpdateAccountForm
+from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, UpdateUsernameForm, UpdateEmailForm, UpdatePasswordForm
 from app.models import User, LoginActivity
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -110,7 +110,7 @@ def login():
                 login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
                 db.session.add(login_activity)
                 db.session.commit()
-                if not user.mfa_enabled:
+                if not user.mfa_enabled and not user.mfa_skipped:
                     return redirect(url_for('setup_mfa'))
                 next_page = request.args.get('next')
                 return redirect(next_page) if next_page else redirect(url_for('home'))
@@ -174,15 +174,6 @@ def reset_token(token):
         return redirect(url_for('login'))
     return render_template('reset_token.html', title='Reset Password', form=form, token=token)
 
-@app.route("/setup_mfa", methods=['GET', 'POST'])
-@login_required
-def setup_mfa():
-    if not current_user.mfa_enabled:
-        current_user.mfa_secret = pyotp.random_base32()
-        db.session.commit()
-        flash('MFA setup initialized. Scan the QR code with your authenticator app.', 'info')
-    return render_template('setup_mfa.html', user=current_user)
-
 @app.route("/verify_mfa", methods=['GET', 'POST'])
 @login_required
 def verify_mfa():
@@ -232,26 +223,80 @@ If you did not make this request then simply ignore this email and no changes wi
 '''
     mail.send(msg)
 
-@app.route("/account", methods=['GET', 'POST'])
+@app.route("/account", methods=['GET'])
 @login_required
 def account():
-    form = UpdateAccountForm()
+    form_username = UpdateUsernameForm()
+    form_email = UpdateEmailForm()
+    form_password = UpdatePasswordForm()
+    return render_template('account.html', 
+                           form_username=form_username, 
+                           form_email=form_email, 
+                           form_password=form_password)
+
+@app.route("/update_username", methods=['POST'])
+@login_required
+def update_username():
+    form = UpdateUsernameForm()
     if form.validate_on_submit():
-        if form.email.data != current_user.email:
-            current_user.email_change_pending = form.email.data
-            send_email_change_confirmation(current_user, form.email.data)
-            flash('A confirmation email has been sent to your new email address.', 'info')
         current_user.username = form.username.data
-        if form.password.data:
-            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            current_user.password = hashed_password
         db.session.commit()
-        flash('Your account has been updated!', 'success')
-        return redirect(url_for('account'))
-    elif request.method == 'GET':
-        form.username.data = current_user.username
-        form.email.data = current_user.email
-    return render_template('account.html', title='Account', form=form)
+        flash('Your username has been updated!', 'success')
+    return redirect(url_for('account'))
+
+@app.route("/update_email", methods=['POST'])
+@login_required
+def update_email():
+    form = UpdateEmailForm()
+    if form.validate_on_submit():
+        current_user.email = form.email.data
+        current_user.confirmed = False
+        db.session.commit()
+        send_confirmation_email(current_user)
+        flash('Your email has been updated! Please confirm your new email address.', 'success')
+    return redirect(url_for('account'))
+
+@app.route("/update_password", methods=['POST'])
+@login_required
+def update_password():
+    form = UpdatePasswordForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        current_user.password = hashed_password
+        db.session.commit()
+        flash('Your password has been updated!', 'success')
+    return redirect(url_for('account'))
+
+@app.route("/enable_mfa", methods=['POST'])
+@login_required
+def enable_mfa():
+    current_user.mfa_skipped = False
+    db.session.commit()
+    return redirect(url_for('setup_mfa'))
+
+@app.route("/setup_mfa", methods=['GET', 'POST'])
+@login_required
+def setup_mfa():
+    if request.method == 'POST':
+        if 'skip' in request.form:
+            current_user.mfa_skipped = True
+            db.session.commit()
+            flash('MFA setup skipped. You can enable it later from the account settings.', 'info')
+            return redirect(url_for('home'))
+        elif 'do_not_show_again' in request.form:
+            current_user.mfa_skipped = True
+            db.session.commit()
+            flash('MFA setup skipped. You can enable it later from the account settings.', 'info')
+            return redirect(url_for('home'))
+        elif 'setup' in request.form:
+            return redirect(url_for('verify_mfa'))
+
+    if not current_user.mfa_enabled:
+        current_user.mfa_secret = pyotp.random_base32()
+        db.session.commit()
+        flash('MFA setup initialized. Scan the QR code with your authenticator app.', 'info')
+    return render_template('setup_mfa.html', user=current_user)
+
 
 
 @app.route("/confirm_email_change/<token>")

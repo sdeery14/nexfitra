@@ -1,27 +1,54 @@
 {% extends "base.html" %}
-{% block title %}Account{% endblock %}
+{% block title %}Account Settings{% endblock %}
 {% block content %}
-<h1>Update Account</h1>
-<form method="POST">
-    {{ form.hidden_tag() }}
+<h1>Account Settings</h1>
+    
+<!-- Update Username Form -->
+<form method="POST" action="{{ url_for('update_username') }}">
+    {{ form_username.hidden_tag() }}
     <div>
-        {{ form.username.label }}<br>
-        {{ form.username(size=32) }}<br>
+        {{ form_username.username.label }}<br>
+        {{ form_username.username(size=32) }}<br>
     </div>
     <div>
-        {{ form.email.label }}<br>
-        {{ form.email(size=32) }}<br>
-    </div>
-    <div>
-        {{ form.password.label }}<br>
-        {{ form.password(size=32) }}<br>
-    </div>
-    <div>
-        {{ form.confirm_password.label }}<br>
-        {{ form.confirm_password(size=32) }}<br>
-    </div>
-    <div>
-        {{ form.submit() }}
+        {{ form_username.submit() }}
     </div>
 </form>
+
+<!-- Update Email Form -->
+<form method="POST" action="{{ url_for('update_email') }}">
+    {{ form_email.hidden_tag() }}
+    <div>
+        {{ form_email.email.label }}<br>
+        {{ form_email.email(size=32) }}<br>
+    </div>
+    <div>
+        {{ form_email.submit() }}
+    </div>
+</form>
+
+<!-- Update Password Form -->
+<form method="POST" action="{{ url_for('update_password') }}">
+    {{ form_password.hidden_tag() }}
+    <div>
+        {{ form_password.password.label }}<br>
+        {{ form_password.password(size=32) }}<br>
+    </div>
+    <div>
+        {{ form_password.confirm_password.label }}<br>
+        {{ form_password.confirm_password(size=32) }}<br>
+    </div>
+    <div>
+        {{ form_password.submit() }}
+    </div>
+</form>
+
+<!-- Enable MFA Form -->
+{% if not current_user.mfa_enabled %}
+    <form method="POST" action="{{ url_for('enable_mfa') }}">
+        <button type="submit">Enable MFA</button>
+    </form>
+{% else %}
+    <p>MFA is enabled.</p>
+{% endif %}
 {% endblock %}

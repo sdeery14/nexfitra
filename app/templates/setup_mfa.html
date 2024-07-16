@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Setup MFA{% endblock %}
 {% block content %}
-    <h1>Setup MFA</h1>
-    <p>Scan the QR code below with your authenticator app.</p>
-    <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ current_user.get_totp_uri()|urlencode }}" alt="QR Code">
-    <p>Alternatively, enter this code: {{ current_user.mfa_secret }}</p>
-    <a href="{{ url_for('verify_mfa') }}">Proceed to Verify MFA</a>
+<h1>Setup MFA</h1>
+<p>Scan the QR code below with your authenticator app.</p>
+<img src="https://api.qrserver.com/v1/create-qr-code/?data={{ current_user.get_totp_uri() | urlencode }}" alt="QR Code">
+<p>Alternatively, enter this code: {{ current_user.mfa_secret }}</p>
+<form method="POST">
+    <button type="submit" name="setup">Proceed to Verify MFA</button>
+    <button type="submit" name="skip">Skip for Now</button>
+    <button type="submit" name="do_not_show_again">Do Not Show Me This Again</button>
+</form>
 {% endblock %}
