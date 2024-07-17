@@ -1,33 +1,34 @@
 # app/routes.py
-from flask import render_template, url_for, flash, redirect, request, session
-from app import app, db, bcrypt, mail
-from app.forms import RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, UpdateUsernameForm, UpdateEmailForm, UpdatePasswordForm
+from flask import Blueprint, render_template, url_for, flash, redirect, request, session, current_app
+from app import db, bcrypt, mail
+from app.forms import (RegistrationForm, LoginForm, RequestResetForm, ResetPasswordForm, MFAForm, 
+                       UpdateUsernameForm, UpdateEmailForm, UpdatePasswordForm)
 from app.models import User, LoginActivity
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer as Serializer
-from wtforms import ValidationError
 import logging
 from datetime import datetime, timezone, timedelta
 import pyotp
 from app.decorators import email_confirmed_required
 
+bp = Blueprint('routes', __name__)
 logger = logging.getLogger(__name__)
 
-@app.route("/")
-@app.route("/home")
+@bp.route("/")
+@bp.route("/home")
 def home():
     return render_template('home.html')
 
-@app.route("/terms_of_service")
+@bp.route("/terms_of_service")
 def terms_of_service():
     return render_template('terms_of_service.html')
 
-@app.route("/privacy_policy")
+@bp.route("/privacy_policy")
 def privacy_policy():
     return render_template('privacy_policy.html')
 
-@app.route("/register", methods=['GET', 'POST'])
+@bp.route("/register", methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -44,20 +45,19 @@ def register():
             db.session.commit()
             send_confirmation_email(user)
             flash('An email has been sent with instructions to confirm your email address.', 'info')
-            return redirect(url_for('login'))
+            return redirect(url_for('routes.login'))
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"{getattr(form, field).label.text} - {error}", 'danger')
     return render_template('register.html', title='Register', form=form)
 
-
 def send_confirmation_email(user, confirm_url=None):
     if confirm_url is None:
         token = user.get_reset_token()
-        confirm_url = url_for('confirm_email', token=token, _external=True)
+        confirm_url = url_for('routes.confirm_email', token=token, _external=True)
     msg = Message('Confirm Your Email',
-                  sender=app.config['MAIL_DEFAULT_SENDER'],
+                  sender=current_app.config['MAIL_DEFAULT_SENDER'],
                   recipients=[user.email])
     msg.body = f'''To confirm your email, visit the following link:
 {confirm_url}
@@ -67,14 +67,14 @@ If you did not make this request then simply ignore this email and no changes wi
     mail.send(msg)
     logger.info(f"Sent confirmation email to {user.email} with URL: {confirm_url}")
 
-@app.route("/confirm_email/<token>")
+@bp.route("/confirm_email/<token>")
 def confirm_email(token):
     logger.info(f"Received token: {token}")  # Logging statement
     user = User.verify_reset_token(token)
     if user is None:
         logger.warning('Invalid or expired token')
         flash('That is an invalid or expired token', 'warning')
-        return redirect(url_for('register'))
+        return redirect(url_for('routes.register'))
     
     logger.info(f"User found: {user.username}")
     
@@ -86,29 +86,29 @@ def confirm_email(token):
         logger.error(f"Error updating database: {e}")
         db.session.rollback()
         flash('There was an issue confirming your email. Please try again.', 'danger')
-        return redirect(url_for('register'))
+        return redirect(url_for('routes.register'))
     
     flash('Your email has been confirmed!', 'success')
-    return redirect(url_for('login'))
+    return redirect(url_for('routes.login'))
 
-@app.route("/resend_confirmation")
+@bp.route("/resend_confirmation")
 @login_required
 def resend_confirmation():
     send_confirmation_email(current_user)
     flash('A new confirmation email has been sent.', 'info')
-    return redirect(url_for('account'))
+    return redirect(url_for('routes.account'))
 
-@app.route("/login", methods=['GET', 'POST'])
+@bp.route("/login", methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('home'))
+        return redirect(url_for('routes.home'))
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user:
             if user.account_locked_until and user.account_locked_until > datetime.now(timezone.utc):
                 flash('Account is locked. Try again later.', 'danger')
-                return redirect(url_for('login'))
+                return redirect(url_for('routes.login'))
             
             if bcrypt.check_password_hash(user.password, form.password.data):
                 user.failed_login_attempts = 0
@@ -119,9 +119,9 @@ def login():
                 db.session.add(login_activity)
                 db.session.commit()
                 if not user.mfa_enabled and not user.mfa_skipped:
-                    return redirect(url_for('setup_mfa'))
+                    return redirect(url_for('routes.setup_mfa'))
                 next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('home'))
+                return redirect(next_page) if next_page else redirect(url_for('routes.home'))
             else:
                 if user.failed_login_attempts is None:
                     user.failed_login_attempts = 0
@@ -136,53 +136,37 @@ def login():
             flash('Login Unsuccessful. Please check email and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
-@app.before_request
-def make_session_permanent():
-    session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=30)
-
-def send_reset_email(user):
-    token = user.get_reset_token()
-    msg = Message('Password Reset Request',
-                  sender=app.config['MAIL_DEFAULT_SENDER'],
-                  recipients=[user.email])
-    msg.body = f'''To reset your password, visit the following link:
-{url_for('reset_token', token=token, _external=True)}
-
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-    mail.send(msg)
-
-@app.route("/reset_password", methods=['GET', 'POST'])
+@bp.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():
     if current_user.is_authenticated:
-        return redirect(url_for('home'))
+        return redirect(url_for('routes.home'))
     form = RequestResetForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        send_reset_email(user)
+        if user:
+            send_reset_email(user)
         flash('An email has been sent with instructions to reset your password.', 'info')
-        return redirect(url_for('login'))
+        return redirect(url_for('routes.login'))
     return render_template('reset_request.html', title='Reset Password', form=form)
 
-@app.route("/reset_password/<token>", methods=['GET', 'POST'])
+@bp.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
     if current_user.is_authenticated:
-        return redirect(url_for('home'))
+        return redirect(url_for('routes.home'))
     user = User.verify_reset_token(token)
     if user is None:
         flash('That is an invalid or expired token', 'warning')
-        return redirect(url_for('reset_request'))
+        return redirect(url_for('routes.reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user.password = hashed_password
         db.session.commit()
         flash('Your password has been updated! You are now able to log in', 'success')
-        return redirect(url_for('login'))
+        return redirect(url_for('routes.login'))
     return render_template('reset_token.html', title='Reset Password', form=form, token=token)
 
-@app.route("/verify_mfa", methods=['GET', 'POST'])
+@bp.route("/verify_mfa", methods=['GET', 'POST'])
 @login_required
 def verify_mfa():
     form = MFAForm()
@@ -191,12 +175,12 @@ def verify_mfa():
             current_user.mfa_enabled = True
             db.session.commit()
             flash('MFA setup complete!', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('routes.home'))
         else:
             flash('Invalid MFA token', 'danger')
     return render_template('verify_mfa.html', form=form)
 
-@app.route("/mfa", methods=['GET', 'POST'])
+@bp.route("/mfa", methods=['GET', 'POST'])
 @login_required
 def mfa():
     form = MFAForm()
@@ -204,34 +188,19 @@ def mfa():
         if current_user.verify_totp(form.token.data):
             current_user.mfa_verified = True
             db.session.commit()
-            return redirect(url_for('home'))
+            return redirect(url_for('routes.home'))
         else:
             flash('Invalid MFA token', 'danger')
     return render_template('mfa.html', form=form)
 
-
-@app.route("/logout")
+@bp.route("/logout")
 def logout():
     logout_user()
     session.pop('remember', None)
     flash('You have been logged out.', 'success')
-    return redirect(url_for('login'))
+    return redirect(url_for('routes.login'))
 
-def send_email_change_confirmation(user, new_email):
-    s = Serializer(app.config['SECRET_KEY'])
-    token = s.dumps({'user_id': user.id, 'new_email': new_email})
-    confirm_url = url_for('confirm_email_change', token=token, _external=True)
-    msg = Message('Confirm Your New Email Address',
-                  sender=app.config['MAIL_DEFAULT_SENDER'],
-                  recipients=[new_email])
-    msg.body = f'''To confirm your new email address, visit the following link:
-{confirm_url}
-
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-    mail.send(msg)
-
-@app.route("/account", methods=['GET'])
+@bp.route("/account", methods=['GET'])
 @login_required
 def account():
     form_username = UpdateUsernameForm()
@@ -242,7 +211,7 @@ def account():
                            form_email=form_email, 
                            form_password=form_password)
 
-@app.route("/update_username", methods=['POST'])
+@bp.route("/update_username", methods=['POST'])
 @login_required
 def update_username():
     form = UpdateUsernameForm()
@@ -250,9 +219,9 @@ def update_username():
         current_user.username = form.username.data
         db.session.commit()
         flash('Your username has been updated!', 'success')
-    return redirect(url_for('account'))
+    return redirect(url_for('routes.account'))
 
-@app.route("/update_email", methods=['POST'])
+@bp.route("/update_email", methods=['POST'])
 @login_required
 def update_email():
     form = UpdateEmailForm()
@@ -262,9 +231,9 @@ def update_email():
         db.session.commit()
         send_confirmation_email(current_user)
         flash('Your email has been updated! Please confirm your new email address.', 'success')
-    return redirect(url_for('account'))
+    return redirect(url_for('routes.account'))
 
-@app.route("/update_password", methods=['POST'])
+@bp.route("/update_password", methods=['POST'])
 @login_required
 def update_password():
     form = UpdatePasswordForm()
@@ -273,16 +242,16 @@ def update_password():
         current_user.password = hashed_password
         db.session.commit()
         flash('Your password has been updated!', 'success')
-    return redirect(url_for('account'))
+    return redirect(url_for('routes.account'))
 
-@app.route("/enable_mfa", methods=['POST'])
+@bp.route("/enable_mfa", methods=['POST'])
 @login_required
 def enable_mfa():
     current_user.mfa_skipped = False
     db.session.commit()
-    return redirect(url_for('setup_mfa'))
+    return redirect(url_for('routes.setup_mfa'))
 
-@app.route("/setup_mfa", methods=['GET', 'POST'])
+@bp.route("/setup_mfa", methods=['GET', 'POST'])
 @login_required
 def setup_mfa():
     if request.method == 'POST':
@@ -290,14 +259,14 @@ def setup_mfa():
             current_user.mfa_skipped = True
             db.session.commit()
             flash('MFA setup skipped. You can enable it later from the account settings.', 'info')
-            return redirect(url_for('home'))
+            return redirect(url_for('routes.home'))
         elif 'do_not_show_again' in request.form:
             current_user.mfa_skipped = True
             db.session.commit()
             flash('MFA setup skipped. You can enable it later from the account settings.', 'info')
-            return redirect(url_for('home'))
+            return redirect(url_for('routes.home'))
         elif 'setup' in request.form:
-            return redirect(url_for('verify_mfa'))
+            return redirect(url_for('routes.verify_mfa'))
 
     if not current_user.mfa_enabled:
         current_user.mfa_secret = pyotp.random_base32()
@@ -305,12 +274,10 @@ def setup_mfa():
         flash('MFA setup initialized. Scan the QR code with your authenticator app.', 'info')
     return render_template('setup_mfa.html', user=current_user)
 
-
-
-@app.route("/confirm_email_change/<token>")
+@bp.route("/confirm_email_change/<token>")
 @login_required
 def confirm_email_change(token):
-    s = Serializer(app.config['SECRET_KEY'])
+    s = Serializer(current_app.config['SECRET_KEY'])
     try:
         data = s.loads(token)
         user = User.query.get(data['user_id'])
@@ -323,11 +290,23 @@ def confirm_email_change(token):
             flash('Invalid or expired token.', 'danger')
     except Exception as e:
         flash('Invalid or expired token.', 'danger')
-    return redirect(url_for('account'))
+    return redirect(url_for('routes.account'))
 
-@app.route("/login_activity")
+@bp.route("/login_activity")
 @login_required
 @email_confirmed_required
 def login_activity():
     activities = current_user.login_activities
     return render_template('login_activity.html', activities=activities)
+
+def send_reset_email(user):
+    token = user.get_reset_token()
+    msg = Message('Password Reset Request',
+                  sender=current_app.config['MAIL_DEFAULT_SENDER'],
+                  recipients=[user.email])
+    msg.body = f'''To reset your password, visit the following link:
+{url_for('routes.reset_token', token=token, _external=True)}
+
+If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    mail.send(msg)

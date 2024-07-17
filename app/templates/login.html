@@ -2,7 +2,8 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
 {% block content %}
-<form method="POST" action="{{ url_for('login') }}">
+<h1>Login</h1>
+<form method="POST" action="{{ url_for('routes.login') }}">
     {{ form.hidden_tag() }}
     <div>
         {{ form.email.label }}<br>
@@ -41,9 +42,7 @@
         {{ form.submit() }}
     </div>
     <div>
-        <a href="{{ url_for('reset_request') }}">Forgot Password?</a>
+        <a href="{{ url_for('routes.reset_request') }}">Forgot Password?</a>
     </div>
 </form>
-
-
 {% endblock %}

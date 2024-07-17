@@ -2,7 +2,7 @@
 {% block title %}Multi-Factor Authentication{% endblock %}
 {% block content %}
 <h1>Multi-Factor Authentication</h1>
-<form method="POST">
+<form method="POST" action="{{ url_for('routes.mfa') }}">
     {{ form.hidden_tag() }}
     <div>
         {{ form.token.label }}<br>

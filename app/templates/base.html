@@ -9,22 +9,21 @@
 </head>
 <body>
     <nav>
-        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('routes.home') }}">Home</a>
         {% if current_user.is_authenticated %}
-            <a href="{{ url_for('logout') }}">Logout</a>
-            <a href="{{ url_for('account') }}">Account</a>
-            <a href="{{ url_for('login_activity') }}">Login Activity</a>
+            <a href="{{ url_for('routes.logout') }}">Logout</a>
+            <a href="{{ url_for('routes.account') }}">Account</a>
+            <a href="{{ url_for('routes.login_activity') }}">Login Activity</a>
         {% else %}
-            <a href="{{ url_for('login') }}">Login</a>
-            <a href="{{ url_for('register') }}">Register</a>
+            <a href="{{ url_for('routes.login') }}">Login</a>
+            <a href="{{ url_for('routes.register') }}">Register</a>
         {% endif %}
-        
     </nav>
     
     <div class="container">
         {% if current_user.is_authenticated and not current_user.confirmed %}
             <div class="alert alert-warning" role="alert">
-                Your email address has not been verified. <a href="{{ url_for('resend_confirmation') }}">Resend confirmation email</a>
+                Your email address has not been verified. <a href="{{ url_for('routes.resend_confirmation') }}">Resend confirmation email</a>
             </div>
         {% endif %}
         {% with messages = get_flashed_messages(with_categories=true) %}
