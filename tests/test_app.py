@@ -4,7 +4,7 @@ from app.models import User
 from flask import url_for
 from flask_testing import TestCase
 from flask_login import current_user
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
 class BaseTestCase(TestCase):
     def create_app(self):
@@ -139,7 +139,7 @@ class TestUserLogin(BaseTestCase):
 
     def test_login_with_locked_account(self):
         user = User.query.filter_by(email='test@example.com').first()
-        user.account_locked_until = datetime.now() + timedelta(minutes=15)
+        user.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
         db.session.commit()
         response = self.client.post(url_for('routes.login'), data=dict(
             email='test@example.com',
