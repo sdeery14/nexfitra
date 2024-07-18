@@ -9,16 +9,21 @@ import re
 # Custom password validator function
 def validate_password(form, field):
     password = field.data
+    errors = []
+    
     if len(password) < 8:
-        raise ValidationError('Password must be at least 8 characters long.')
+        errors.append('Password must be at least 8 characters long.')
     if not re.search(r"\d", password):
-        raise ValidationError('Password must contain at least one number.')
+        errors.append('Password must contain at least one number.')
     if not re.search(r"[A-Z]", password):
-        raise ValidationError('Password must contain at least one uppercase letter.')
+        errors.append('Password must contain at least one uppercase letter.')
     if not re.search(r"[a-z]", password):
-        raise ValidationError('Password must contain at least one lowercase letter.')
+        errors.append('Password must contain at least one lowercase letter.')
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        raise ValidationError('Password must contain at least one special character.')
+        errors.append('Password must contain at least one special character.')
+    
+    if errors:
+        raise ValidationError(' '.join(errors))
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20)])
@@ -54,11 +59,7 @@ class RequestResetForm(FlaskForm):
             raise ValidationError('There is no account with that email. You must register first.')
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField('Password', validators=[
-        DataRequired(),
-        Length(min=8, message='Password must be at least 8 characters long'),
-        Regexp(r'(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])', message='Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character')
-    ])
+    password = PasswordField('Password', validators=[DataRequired(), validate_password])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Reset Password')
 

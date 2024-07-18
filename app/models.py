@@ -1,7 +1,7 @@
 # app/models.py
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
-from app import db
+from app import db, bcrypt
 from flask_login import UserMixin
 import logging
 from datetime import datetime, timezone, timedelta
@@ -26,6 +26,12 @@ class User(db.Model, UserMixin):
     mfa_skipped = db.Column(db.Boolean, default=False)
     active = db.Column(db.Boolean, default=True)
     login_activities = db.relationship('LoginActivity', backref='user', lazy=True)
+
+    def set_password(self, password):
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])

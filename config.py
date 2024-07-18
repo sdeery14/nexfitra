@@ -25,7 +25,12 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test.db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    WTF_CSRF_ENABLED = False  # Disable CSRF protection in testing
+    LOGIN_DISABLED = True  # Disable login requirement for testing
+    MAIL_SUPPRESS_SEND = True  # Disable sending emails during tests
+    
 
 class ProductionConfig(Config):
     pass

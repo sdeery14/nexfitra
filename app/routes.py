@@ -39,8 +39,8 @@ def register():
             if existing_user.username == form.username.data:
                 flash('Username is already in use. Please choose a different one.', 'danger')
         else:
-            hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-            user = User(username=form.username.data, email=form.email.data, password=hashed_password)
+            user = User(username=form.username.data, email=form.email.data)
+            user.set_password(form.password.data)
             db.session.add(user)
             db.session.commit()
             send_confirmation_email(user)
@@ -109,8 +109,7 @@ def login():
             if user.account_locked_until and user.account_locked_until > datetime.now(timezone.utc):
                 flash('Account is locked. Try again later.', 'danger')
                 return redirect(url_for('routes.login'))
-            
-            if bcrypt.check_password_hash(user.password, form.password.data):
+            if user.check_password(form.password.data):
                 user.failed_login_attempts = 0
                 db.session.commit()
                 login_user(user, remember=form.remember.data)
@@ -118,6 +117,7 @@ def login():
                 login_activity = LoginActivity(user_id=user.id, ip_address=request.remote_addr, user_agent=request.headers.get('User-Agent'))
                 db.session.add(login_activity)
                 db.session.commit()
+                flash('You have been logged in!')
                 if not user.mfa_enabled and not user.mfa_skipped:
                     return redirect(url_for('routes.setup_mfa'))
                 next_page = request.args.get('next')
@@ -159,8 +159,7 @@ def reset_token(token):
         return redirect(url_for('routes.reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user.password = hashed_password
+        user.set_password(form.password.data)
         db.session.commit()
         flash('Your password has been updated! You are now able to log in', 'success')
         return redirect(url_for('routes.login'))
@@ -238,8 +237,7 @@ def update_email():
 def update_password():
     form = UpdatePasswordForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        current_user.password = hashed_password
+        current_user.set_password(form.password.data)
         db.session.commit()
         flash('Your password has been updated!', 'success')
     return redirect(url_for('routes.account'))

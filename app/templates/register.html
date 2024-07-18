@@ -8,21 +8,36 @@
     <div>
         {{ form.username.label }}<br>
         {{ form.username(size=32) }}<br>
+        {% for error in form.username.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
     <div>
         {{ form.email.label }}<br>
         {{ form.email(size=32) }}<br>
+        {% for error in form.email.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
     <div>
         {{ form.password.label }}<br>
         {{ form.password(size=32) }}<br>
+        {% for error in form.password.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
     <div>
         {{ form.confirm_password.label }}<br>
         {{ form.confirm_password(size=32) }}<br>
+        {% for error in form.confirm_password.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
     <div>
         {{ form.accept_tos() }} I accept the <a href="{{ url_for('routes.terms_of_service') }}" target="_blank">Terms of Service</a> and <a href="{{ url_for('routes.privacy_policy') }}" target="_blank">Privacy Policy</a><br>
+        {% for error in form.accept_tos.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
     </div>
     <div>
         {{ form.submit() }}
