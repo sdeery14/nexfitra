@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
-from config import config
+from .config import config
 from datetime import timedelta
 import logging
 from logging.handlers import RotatingFileHandler

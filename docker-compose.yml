@@ -1,0 +1,86 @@
+services:
+  web:
+    image: sdeery14/nexfitra_flask_app:latest
+    ports:
+      - "5000:5000"
+    command: ["/bin/sh", "-c", "./run-migrations.sh && flask run --host=0.0.0.0"]
+    volumes:
+      - .:/code
+    environment:
+      # Flask variables
+      - FLASK_ENV=development
+      - FLASK_APP=run.py
+      
+      # mail variables
+      - MAIL_SERVER=smtp-mail.outlook.com
+      - MAIL_PORT=587
+      - MAIL_USE_TLS=1
+      - MAIL_USERNAME=sean@nexfitra.com
+      - MAIL_DEFAULT_SENDER=donotreply@nexfitra.com
+    secrets:
+      - flask_secret_key
+      - flask_user_password
+      - mail_password
+    depends_on:
+      - db
+  
+  test:
+    image: sdeery14/nexfitra_flask_app:latest
+    command: ["/bin/sh", "-c", "python run_tests.py"] 
+    volumes:
+      - .:/code
+    working_dir: /code 
+    environment:
+      # Test DB variables
+      - FLASK_ENV=testing
+      - FLASK_TEST_USER_PASSWORD_FILE=/run/secrets/flask_test_user_password
+      - TEST_DATABASE_URL=postgresql://flask_test_user:${FLASK_TEST_USER_PASSWORD}@db:5432/flask_test_db
+      - PYTHONPATH=/code
+    depends_on:
+      - db
+    secrets:
+      - flask_test_user_password
+      - postgres_password
+      - flask_secret_key
+      - mail_password
+    deploy:
+      restart_policy:
+        condition: none
+
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+      - flask_user_password
+      - flask_test_user_password
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - db
+
+
+secrets:
+  flask_secret_key:
+    file: ./secrets/flask_secret_key.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  flask_user_password:
+    file: ./secrets/flask_user_password.txt
+  flask_test_user_password:
+    file: ./secrets/flask_test_user_password.txt
+  mail_password:
+    file: ./secrets/mail_password.txt
+
+volumes:
+  postgres_data:
