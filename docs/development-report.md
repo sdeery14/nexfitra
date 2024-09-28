@@ -49,6 +49,15 @@ Discuss how the architecture evolved as you built the app.
 ## 5. Development Setup
 
 1. **Set up GitHub Repo**: 
+  - Initialized the plan and report template as a git repo
+  - Pushed the repo to a GitHub repo
+  - Added README and LICENSE
+2. **Set up Poetry**:
+  - Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
+  - Initialize Poetry in the project: `poetry init`
+  - Add dependencies (e.g., Flask, FastAPI, PostgreSQL, etc.) via Poetry: `poetry add flask fastapi uvicorn psycopg2-binary`
+3. **Set up Docker**:
+
 
 This section will reflect on the ease or difficulty of setting up the environment.
 
