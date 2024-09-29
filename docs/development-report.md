@@ -265,6 +265,9 @@ docker-compose up --build
   - The Flask app is available at http://127.0.0.1:5000/.
   - The Fast API is available at http://127.0.0.1:8000/.
   - The pgAdmin home page is available at http://127.0.0.1:5050/.
+```bash
+docker-compose up --build tests
+```
   
 ## 6. Detailed Development Steps
 
