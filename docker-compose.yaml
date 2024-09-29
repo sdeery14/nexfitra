@@ -1,0 +1,64 @@
+services:
+  flask:
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile-flask
+    container_name: flask_service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+    networks:
+      - nexfitra_network
+
+  fastapi:
+    build:
+      context: ./fastapi_app
+      dockerfile: Dockerfile-fastapi
+    container_name: fastapi_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+    networks:
+      - nexfitra_network
+
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nexfitra
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nexfitra_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_service
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - nexfitra_network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  nexfitra_network:

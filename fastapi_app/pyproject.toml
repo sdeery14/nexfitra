@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "fastapi-app"
+version = "0.1.0"
+description = "FastAPI app for serving AI-generated content"
+authors = ["Sean Deery sean@nexfitra.com"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.95.2"
+uvicorn = "^0.21.1"
+transformers = "^4.28.0"
+# Optional: torch or tensorflow depending on the models you're using
+# torch = "^2.0.0"
+# tensorflow = "^2.12.0"
+psycopg2-binary = "^2.9.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

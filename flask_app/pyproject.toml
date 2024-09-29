@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "flask-app"
+version = "0.1.0"
+description = "Flask app for handling business logic and user authentication"
+authors = ["Sean Deery sean@nexfitra.com"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^2.3.2"
+flask-jwt-extended = "^4.4.4"
+psycopg2-binary = "^2.9.7"
+flask-sqlalchemy = "^3.0.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

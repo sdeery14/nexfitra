@@ -48,25 +48,154 @@ Discuss how the architecture evolved as you built the app.
 
 ## 5. Development Setup
 
-1. **Set up GitHub Repo**: 
+### 1. Set up GitHub Repo: 
   - Initialized the plan and report template as a git repo
   - Pushed the repo to a GitHub repo
   - Added README and LICENSE
-2. **Set up Poetry**:
-  - Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
-  - Initialize Poetry in the project: `poetry init`
-  - Add dependencies (e.g., Flask, FastAPI, PostgreSQL, etc.) via Poetry: `poetry add flask fastapi uvicorn psycopg2-binary`
-3. **Set up Docker**:
+### 2. Set up Bare Minimum Flask and FastAPI apps
+- Created `flask_app` directory with an empty `__init__.py` file and an `app.py` file.
+```python
+# flask_app/app.py
+from flask import Flask, jsonify
 
+app = Flask(__name__)
 
-This section will reflect on the ease or difficulty of setting up the environment.
+@app.route('/')
+def hello():
+    return jsonify(message="Hello from Flask!")
 
-- **Poetry**: 
-  - Was Poetry sufficient for dependency management? 
-  - Were there any challenges getting it to work with Docker and Kubernetes?
-- **Docker & Kubernetes**: 
-  - What challenges did you encounter with setting up Dockerfiles or Docker Compose? 
-  - Did the Kubernetes setup scale as expected for development?
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
+```
+- Created `fastapi_app` directory with an empty `__init__.py` file and an `app.py` file.
+```python
+# fastapi_app/app.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from FastAPI!"}
+
+```
+### 3. Set up Poetry:
+  - Installed Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
+  - Created a Poetry file for the `flask_app`:
+```sh
+cd flask_app
+poetry init
+poetry add flask psycopg2-binary
+```
+  - Created a Poetry file for the `fastapi_app`:
+```sh
+cd ../fastapi_app
+poetry init
+poetry add fastapi uvicorn
+cd ..
+```
+### 4. Set Up Docker: 
+  - Created Dockerfiles for both Flask (`flask_app/Dockerfile-flask`) and FastAPI (`fastapi_app/Dockerfile-fastapi`).
+```dockerfile
+# flask_app/Dockerfile-flask
+
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the Flask app code to the working directory
+COPY . .
+
+# Expose the port for Flask
+EXPOSE 5000
+
+# Command to run the Flask app
+CMD ["poetry", "run", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+
+```
+```dockerfile
+# fastapi_app/Dockerfile-fastapi
+
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the FastAPI app code to the working directory
+COPY . .
+
+# Expose the port for FastAPI
+EXPOSE 8000
+
+# Command to run the FastAPI app
+CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+  - Used Docker Compose for local development to bring up both services (Flask and FastAPI) and the database.
+```yaml
+# docker-compose.yaml
+services:
+  flask:
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile-flask
+    container_name: flask_service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+
+  fastapi:
+    build:
+      context: ./fastapi_app
+      dockerfile: Dockerfile-fastapi
+    container_name: fastapi_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nexfitra
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+```
+```bash
+docker-compose up --build
+```
+- Results
+  - The Flask app is available at http://127.0.0.1:5000/.
+  - The Fast API is available at http://127.0.0.1:8000/.
   
 ## 6. Detailed Development Steps
 
@@ -135,14 +264,17 @@ Reflect on your CI/CD setup and how it evolved.
 Compare the actual timeline to the planned one.
 
 - **Planned Timeline**: 
-  - Week 1-2: Project setup
-  - Week 3-4: User Authentication
-  - Week 5-6: Feature development
-  - Week 7-8: AI model integration, etc.
+  - Week 1-2: 9/28/2024-10/11/2024 Project Setup
+  - Week 3-4: 10/12/2024-10/25/2024 User Authentication
+  - Week 5-6: 10/26/2024-11/8/2024 Feature development
+  - Week 7-8: 11/9/2024-11/22/2024 AI model integration
+  - Week 9-10: 11/23/2024-12/6/2024 Set up CI/CD pipeline
+  - Week 11-12: 12/7/2024-12/20/2024 Release app to production and monitor
   
 - **Actual Timeline**:
-  - Did you stick to the original timeline?
-  - Where were the major delays, and what caused them?
+  - Week 1-2: 9/28/2024-10/11/2024 Project Setup
+
+
 
 ## 10. Conclusion & Learnings
 Summarize your overall experience in developing NexFitra.
