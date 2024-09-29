@@ -96,6 +96,25 @@ poetry add fastapi uvicorn
 cd ..
 ```
 ### 4. Set Up Docker: 
+  - Created a .env file holding sensitive data, and made a .env_template for other developers.
+```.env
+# .env_template
+# Use this template to change the defaults and set up your environemnt variables.
+# Save the file as .env once the variables are changed
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=nexfitra
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=admin
+
+FLASK_DB_USER=flask_user
+FLASK_DB_PASSWORD=flask_password
+FLASK_DB_NAME=flask_db
+
+FASTAPI_DB_USER=fastapi_user
+FASTAPI_DB_PASSWORD=fastapi_password
+FASTAPI_DB_NAME=fastapi_db
+```
   - Created Dockerfiles for both Flask (`flask_app/Dockerfile-flask`) and FastAPI (`fastapi_app/Dockerfile-fastapi`).
 ```dockerfile
 # flask_app/Dockerfile-flask
@@ -146,9 +165,26 @@ EXPOSE 8000
 # Command to run the FastAPI app
 CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+  - Added script to create the database users and databases
+```bash
+# scripts/init-db.sh
+set -e
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE USER $FLASK_DB_USER WITH PASSWORD '$FLASK_DB_PASSWORD';
+    CREATE DATABASE $FLASK_DB_NAME;
+    GRANT ALL PRIVILEGES ON DATABASE $FLASK_DB_NAME TO $FLASK_DB_USER;
+
+    CREATE USER $FASTAPI_DB_USER WITH PASSWORD '$FASTAPI_DB_PASSWORD';
+    CREATE DATABASE $FASTAPI_DB_NAME;
+    GRANT ALL PRIVILEGES ON DATABASE $FASTAPI_DB_NAME TO $FASTAPI_DB_USER;
+EOSQL
+```
   - Used Docker Compose for local development to bring up both services (Flask and FastAPI) and the database.
 ```yaml
 # docker-compose.yaml
+version: '3.8'
+
 services:
   flask:
     build:
@@ -160,7 +196,9 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+      - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
+    networks:
+      - nexfitra_network
 
   fastapi:
     build:
@@ -172,22 +210,52 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/nexfitra
+      - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
+    networks:
+      - nexfitra_network
 
   db:
     image: postgres:16
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: nexfitra
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      FLASK_DB_USER: ${FLASK_DB_USER}
+      FLASK_DB_PASSWORD: ${FLASK_DB_PASSWORD}
+      FLASK_DB_NAME: ${FLASK_DB_NAME}
+      FASTAPI_DB_USER: ${FASTAPI_DB_USER}
+      FASTAPI_DB_PASSWORD: ${FASTAPI_DB_PASSWORD}
+      FASTAPI_DB_NAME: ${FASTAPI_DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - nexfitra_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_service
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - nexfitra_network
 
 volumes:
   postgres_data:
+  pgadmin_data:
+
+networks:
+  nexfitra_network:
 
 ```
 ```bash
@@ -196,6 +264,7 @@ docker-compose up --build
 - Results
   - The Flask app is available at http://127.0.0.1:5000/.
   - The Fast API is available at http://127.0.0.1:8000/.
+  - The pgAdmin home page is available at http://127.0.0.1:5050/.
   
 ## 6. Detailed Development Steps
 
