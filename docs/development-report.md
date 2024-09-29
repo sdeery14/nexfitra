@@ -83,17 +83,58 @@ def read_root():
 ### 3. Set up Poetry:
   - Installed Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
   - Created a Poetry file for the `flask_app`:
-```sh
-cd flask_app
-poetry init
-poetry add flask psycopg2-binary
+```toml
+# flask_app/pyproject.toml
+[tool.poetry]
+name = "flask-app"
+version = "0.1.0"
+description = "Flask app for handling business logic and user authentication"
+authors = ["Sean Deery sean@nexfitra.com"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^2.3.2"
+flask-jwt-extended = "^4.4.4"
+psycopg2-binary = "^2.9.7"
+flask-sqlalchemy = "^3.0.4"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.3.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 ```
   - Created a Poetry file for the `fastapi_app`:
-```sh
-cd ../fastapi_app
-poetry init
-poetry add fastapi uvicorn
-cd ..
+```toml
+# fastapi_app/pyproject.toml
+[tool.poetry]
+name = "fastapi-app"
+version = "0.1.0"
+description = "FastAPI app for serving AI-generated content"
+authors = ["Sean Deery sean@nexfitra.com"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.95.2"
+uvicorn = "^0.21.1"
+transformers = "^4.28.0"
+psycopg2-binary = "^2.9.7"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.3.3"
+httpx = "^0.23.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 ```
 ### 4. Set Up Docker: 
   - Created a .env file holding sensitive data, and made a .env_template for other developers.
@@ -115,7 +156,11 @@ FASTAPI_DB_USER=fastapi_user
 FASTAPI_DB_PASSWORD=fastapi_password
 FASTAPI_DB_NAME=fastapi_db
 ```
-  - Created Dockerfiles for both Flask (`flask_app/Dockerfile-flask`) and FastAPI (`fastapi_app/Dockerfile-fastapi`).
+  - Created Dockerfiles for:
+    - Flask (`flask_app/Dockerfile-flask`)
+    - Flask Testing (`flask_app/Dockerfile-test`)
+    - FastAPI (`fastapi_app/Dockerfile-fastapi`)
+    - FastAPI Testing (`fastapi_app/Dockerfile-fastapi`)
 ```dockerfile
 # flask_app/Dockerfile-flask
 
@@ -139,8 +184,32 @@ EXPOSE 5000
 
 # Command to run the Flask app
 CMD ["poetry", "run", "flask", "run", "--host=0.0.0.0", "--port=5000"]
-
 ```
+```dockerfile
+# flask_app/Dockerfile-flask-test
+
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the Flask app code to the working directory
+COPY . .
+
+# Add /app to the Python path
+ENV PYTHONPATH=/app
+
+# Command to run the tests using Poetry
+CMD ["poetry", "run", "pytest"]
+```
+
 ```dockerfile
 # fastapi_app/Dockerfile-fastapi
 
@@ -164,6 +233,29 @@ EXPOSE 8000
 
 # Command to run the FastAPI app
 CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+```dockerfile
+# fastapi_app/Dockerfile-fastapi-test
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the FastAPI app code to the working directory
+COPY . .
+
+# Add /app to the Python path
+ENV PYTHONPATH=/app
+
+# Command to run the tests using Poetry
+CMD ["poetry", "run", "pytest", "-v"]
 ```
   - Added script to create the database users and databases
 ```bash
@@ -266,7 +358,10 @@ docker-compose up --build
   - The Fast API is available at http://127.0.0.1:8000/.
   - The pgAdmin home page is available at http://127.0.0.1:5050/.
 ```bash
-docker-compose up --build tests
+docker-compose up --build flask_tests
+```
+```bash
+docker-compose up --build fastapi_tests
 ```
   
 ## 6. Detailed Development Steps

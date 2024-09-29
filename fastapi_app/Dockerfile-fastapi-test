@@ -1,0 +1,20 @@
+# Use the official Python 3.12 image from the Docker Hub
+FROM python:3.12-slim
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the FastAPI app code to the working directory
+COPY . .
+
+# Add /app to the Python path
+ENV PYTHONPATH=/app
+
+# Command to run the tests using Poetry
+CMD ["poetry", "run", "pytest", "-v"]

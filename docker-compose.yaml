@@ -15,10 +15,10 @@ services:
     networks:
       - nexfitra_network
   
-  tests:
+  flask_tests:
     build:
       context: ./flask_app
-      dockerfile: Dockerfile-test
+      dockerfile: Dockerfile-flask-test
     container_name: flask_tests
     depends_on:
       - db
@@ -38,6 +38,19 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
+    networks:
+      - nexfitra_network
+
+  fastapi_tests:
+    build:
+      context: ./fastapi_app
+      dockerfile: Dockerfile-fastapi-test
+    container_name: fastapi_tests
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
+    command: ["poetry", "run", "pytest", "-v"]
     networks:
       - nexfitra_network
 
