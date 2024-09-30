@@ -1,0 +1,19 @@
+FROM node:14-alpine
+
+WORKDIR /app
+
+# Install dependencies separately to leverage Docker caching
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy the rest of the app's source code
+COPY . .
+
+# Set the environment to development (can be overridden with Docker Compose)
+ENV NODE_ENV=development
+
+# Expose port 3000 (React development server's default port)
+EXPOSE 3000
+
+# Start the app in development mode
+CMD ["npm", "start"]

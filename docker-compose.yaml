@@ -29,6 +29,19 @@ services:
     networks:
       - nexfitra_network  # Connect to the custom network
 
+  react:
+    build:
+      context: ./react_app
+      dockerfile: Dockerfile-react
+    command: npm start
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./react_app:/app/react_app
+      - /app/react_app/node_modules
+    depends_on:
+      - flask
+
   # FastAPI application service
   fastapi:
     build:
