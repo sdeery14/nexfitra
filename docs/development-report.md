@@ -6,13 +6,13 @@
 3. [Features](#3-features)
 4. [Architecture](#4-architecture)
 5. [Development Setup](#5-development-setup)
-   - [Set up GitHub Repo](#1-set-up-github-repo)
-   - [Set up Bare Minimum Flask and FastAPI apps](#2-set-up-bare-minimum-flask-and-fastapi-apps)
-   - [Set up Poetry](#3-set-up-poetry)
-   - [Set up Docker](#4-set-up-docker)
+   1. [Set up GitHub Repo](#51-set-up-github-repo)
+   2. [Set up Bare Minimum Flask and FastAPI apps](#52-set-up-bare-minimum-flask-and-fastapi-apps)
+   3. [Set up Poetry](#53-set-up-poetry)
+   4. [Set up Docker](#54-set-up-docker)
 6. [Detailed Development Steps](#6-detailed-development-steps)
-   - [Flask Backend](#61-flask-backend)
-   - [FastAPI AI Service](#62-fastapi-ai-service)
+   1. [Flask Backend](#61-flask-backend)
+   2. [FastAPI AI Service](#62-fastapi-ai-service)
 7. [Deployment Strategy](#7-deployment-strategy)
 8. [CI/CD Pipeline](#8-cicd-pipeline)
 9. [Project Timeline](#9-project-timeline)
@@ -66,39 +66,73 @@ Discuss how the architecture evolved as you built the app.
 
 ## 5. Development Setup
 
-### 1. Set up GitHub Repo: 
+### 5.1 Set up GitHub Repo: 
   - Initialized the plan and report template as a git repo
   - Pushed the repo to a GitHub repo
   - Added README and LICENSE
-### 2. Set up Bare Minimum Flask and FastAPI apps
+### 5.2 Set up Bare Minimum Flask and FastAPI apps
+Created directories for the `flask_app` and `fastapi_app`.
 - Created `flask_app` directory with an empty `__init__.py` file and an `app.py` file.
 ```python
 # flask_app/app.py
+"""
+This module sets up a basic Flask web application.
+
+Routes:
+    /: Returns a JSON response with a greeting message.
+
+Functions:
+    hello(): Handles the root route and returns a JSON response.
+
+Usage:
+    Run this module directly to start the Flask web server on host '0.0.0.0' and port '5000'.
+"""
+
+# Import Flask and jsonify from the flask package
 from flask import Flask, jsonify
 
+# Create an instance of the Flask class
 app = Flask(__name__)
 
+# Define a route for the root URL ('/')
 @app.route('/')
 def hello():
+    # Return a JSON response with a greeting message
     return jsonify(message="Hello from Flask!")
 
+# Check if the script is run directly (and not imported as a module)
 if __name__ == '__main__':
+    # Run the Flask web server on host '0.0.0.0' and port '5000'
     app.run(host='0.0.0.0', port=5000)
-
 ```
-- Created `fastapi_app` directory with an empty `__init__.py` file and an `app.py` file.
+  - Created `fastapi_app` directory with an empty `__init__.py` file and an `app.py` file.
 ```python
 # fastapi_app/app.py
+"""
+This module initializes a FastAPI application and defines a single route.
+
+Routes:
+    Returns a welcome message.
+
+Functions:
+    read_root()
+    Handles GET requests to the root URL and returns a JSON response with a welcome message.
+"""
+
+# Import FastAPI from the fastapi package
 from fastapi import FastAPI
 
+# Create an instance of the FastAPI class
 app = FastAPI()
 
+# Define a route for the root URL ('/')
 @app.get("/")
 def read_root():
+    # Return a JSON response with a welcome message
     return {"message": "Hello from FastAPI!"}
-
 ```
-### 3. Set up Poetry:
+### 5.3 Set up Poetry:
+Created `pyproject.toml` files for the `flask_app` and `fastapi_app`, and locked the dependencies.
   - Installed Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
   - Created a Poetry file for the `flask_app`:
 ```toml
@@ -126,7 +160,9 @@ pytest = "^8.3.3"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
+- Locked the dependencies for the `flask_app`.
 ```bash
+# Lock the dependencies
 cd flask_app
 poetry lock
 ```
@@ -157,11 +193,13 @@ httpx = "^0.23.0"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
+- Locked the dependencnies for the `fastapi_app`.
 ```bash
+# Lock the dependencies
 cd ../fastapi_app
 poetry lock
 ```
-### 4. Set Up Docker: 
+### 5.4 Set Up Docker: 
   - Created a .env file holding sensitive data, and made a .env_template for other developers.
 ```.env
 # .env_template

@@ -4,6 +4,8 @@
 
 1. [Project Overview](#1-project-overview)
 2. [Technology Stack](#2-technology-stack)
+   1. [Technology Stack Summary](#21-technology-stack-summary)
+   2. [Technology Stack Details](#22-technology-stack-details)
 3. [Features](#3-features)
 4. [Architecture](#4-architecture)
 5. [Development Setup](#5-development-setup)
@@ -19,6 +21,8 @@
 NexFitra is a health app designed to help users create and track their workouts and diet. Users will input their information such as height, weight, sex, recent workout level, fitness goals, exercises they enjoy, and foods they like. The app will calculate the user's macros and use a generative AI model to suggest a workout schedule and meal plan. Users can save and track their progress, and the app will update the meal plan automatically when their height or weight changes.
 
 ## 2. Technology Stack
+
+### 2.1 Technology Stack Summary
 - **Frontend**: React
 - **Backend**: Flask (Business Logic & User Authentication), FastAPI (Generative AI Service)
 - **Database**: PostgreSQL
@@ -27,6 +31,79 @@ NexFitra is a health app designed to help users create and track their workouts 
 - **Orchestration**: Kubernetes
 - **CI/CD**: GitHub Actions (CI/CD Pipeline for automatic deployments)
 - **Dependency Management**: Poetry
+
+### 2.2 Technology Stack Details
+- **Frontend**: **React**
+  - **Justification**: React is a highly popular JavaScript library for building user interfaces, particularly single-page applications (SPAs). It offers a component-based architecture, which enhances reusability and simplifies UI development. React’s ecosystem includes rich state management tools like Redux, and integration with other libraries is seamless. Given its large community support and continuous updates, React is well-suited for building responsive, dynamic, and scalable web applications.
+  - **Benefits**: 
+    - Strong community and ecosystem
+    - Reusable components
+    - Easy integration with backend APIs
+    - High performance through virtual DOM
+
+- **Backend**: **Flask (Business Logic & User Authentication)** and **FastAPI (Generative AI Service)**
+  - **Flask**:
+    - **Justification**: Flask is a microframework for Python that is simple yet powerful. It’s lightweight, making it easy to build and scale small applications while retaining the flexibility to add extensions for more advanced use cases (e.g., authentication with Flask-JWT-Extended, database interactions with SQLAlchemy). Flask's minimalism ensures that only necessary components are included, resulting in faster development cycles. It’s ideal for handling the business logic, user authentication, and routing in the NexFitra app.
+    - **Benefits**: 
+      - Lightweight and flexible
+      - Active community support
+      - Easily extensible with Flask plugins
+      - Familiar to many developers due to Python’s popularity
+
+  - **FastAPI**:
+    - **Justification**: FastAPI is a modern, high-performance web framework for building APIs with Python, particularly optimized for asynchronous operations. It is known for its simplicity, automatic validation, and speed, making it perfect for AI services that may require intensive computations. FastAPI allows the development of APIs that are easily scalable and can handle high-throughput scenarios, which is important for serving AI-generated content in NexFitra.
+    - **Benefits**: 
+      - High performance and asynchronous support
+      - Built-in validation and serialization using Python type hints
+      - Auto-generated OpenAPI documentation
+      - Easy to integrate with AI models and services
+
+- **Database**: **PostgreSQL**
+  - **Justification**: PostgreSQL is an open-source, relational database management system known for its stability, extensibility, and support for complex queries. It is well-suited for applications requiring ACID compliance and complex transactions, such as fitness tracking apps where user data must be stored and retrieved efficiently. PostgreSQL also supports JSON data types and full-text search, making it a versatile choice for modern web applications.
+  - **Benefits**:
+    - ACID-compliant transactions for reliability
+    - Rich feature set including JSON support and advanced indexing
+    - Open-source with an active development community
+    - Scalable and suitable for handling large datasets
+
+- **Database Management**: **pgAdmin**
+  - **Justification**: pgAdmin is the most popular and feature-rich open-source administration tool for PostgreSQL. It provides an intuitive web interface for managing PostgreSQL databases, making it easier to handle day-to-day tasks such as running queries, managing tables, and performing backups. This makes pgAdmin an ideal choice for managing NexFitra’s user profiles, workout data, and meal plans.
+  - **Benefits**:
+    - User-friendly web interface
+    - Rich feature set for database management
+    - Supports backups, monitoring, and fine-grained administrative tasks
+
+- **Containerization**: **Docker**
+  - **Justification**: Docker allows for containerization, enabling developers to package applications and their dependencies into a single container that can run consistently across various environments. This is essential for NexFitra, where maintaining uniform development, testing, and production environments is critical for reliability. Docker’s lightweight containers also make it easier to deploy microservices, such as Flask and FastAPI, as independent units.
+  - **Benefits**:
+    - Consistent development and production environments
+    - Simplifies dependency management
+    - Lightweight and efficient containerization
+    - Easy to scale and orchestrate microservices
+
+- **Orchestration**: **Kubernetes**
+  - **Justification**: Kubernetes is a leading container orchestration tool used to automate the deployment, scaling, and management of containerized applications. For NexFitra, Kubernetes ensures that both the Flask backend and FastAPI AI service can scale automatically based on demand, providing high availability and resilience. It allows NexFitra to easily manage container lifecycles, implement load balancing, and achieve zero downtime deployments.
+  - **Benefits**:
+    - Automates scaling, deployment, and management of containers
+    - Load balancing and self-healing of containers
+    - Supports rolling updates for zero downtime
+    - Widely adopted with strong community and tool support
+
+- **CI/CD**: **GitHub Actions**
+  - **Justification**: GitHub Actions provides a flexible and powerful way to automate the CI/CD process directly from GitHub repositories. With NexFitra, GitHub Actions can automate the build, test, and deployment processes for both the Flask and FastAPI services, reducing manual work and the risk of errors. It integrates smoothly with Docker and Kubernetes, allowing for continuous deployment to staging and production environments.
+  - **Benefits**:
+    - Seamless integration with GitHub repositories
+    - Custom workflows for building, testing, and deploying
+    - Supports multi-environment deployments (e.g., staging and production)
+    - Extensive marketplace of pre-built actions and integrations
+
+- **Dependency Management**: **Poetry**
+  - **Justification**: Poetry is a dependency management and packaging tool for Python that simplifies project setup, dependency resolution, and virtual environment management. It is particularly useful for managing multiple Python projects (Flask and FastAPI) within the same codebase. Poetry ensures that dependencies are locked and reproducible across different environments, which is essential for ensuring consistency in development, testing, and production.
+  - **Benefits**:
+    - Easy to manage dependencies and virtual environments
+    - Lockfile ensures consistency across environments
+    - Simplifies Python project setup and packaging
+    - Supports publishing packages to PyPI if needed
 
 ## 3. Features
 - **User Authentication**: Secure login and registration
