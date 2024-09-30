@@ -126,6 +126,10 @@ pytest = "^8.3.3"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
+```bash
+cd flask_app
+poetry lock
+```
   - Created a Poetry file for the `fastapi_app`:
 ```toml
 # fastapi_app/pyproject.toml
@@ -152,7 +156,10 @@ httpx = "^0.23.0"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
+```
+```bash
+cd ../fastapi_app
+poetry lock
 ```
 ### 4. Set Up Docker: 
   - Created a .env file holding sensitive data, and made a .env_template for other developers.

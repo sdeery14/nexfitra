@@ -1,5 +1,20 @@
 # NexFitra Development Plan
 
+## Table of Contents
+
+1. [Project Overview](#1-project-overview)
+2. [Technology Stack](#2-technology-stack)
+3. [Features](#3-features)
+4. [Architecture](#4-architecture)
+5. [Development Setup](#5-development-setup)
+6. [Detailed Development Steps](#6-detailed-development-steps)
+   1. [Flask Backend](#61-flask-backend)
+   2. [FastAPI AI Service](#62-fastapi-ai-service)
+7. [Deployment Strategy](#7-deployment-strategy)
+8. [CI/CD Pipeline](#8-cicd-pipeline)
+9. [Project Timeline](#9-project-timeline)
+
+
 ## 1. Project Overview
 NexFitra is a health app designed to help users create and track their workouts and diet. Users will input their information such as height, weight, sex, recent workout level, fitness goals, exercises they enjoy, and foods they like. The app will calculate the user's macros and use a generative AI model to suggest a workout schedule and meal plan. Users can save and track their progress, and the app will update the meal plan automatically when their height or weight changes.
 
