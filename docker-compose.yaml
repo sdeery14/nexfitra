@@ -1,59 +1,64 @@
 version: '3.8'
 
 services:
+  # Flask application service
   flask:
     build:
       context: ./flask_app
       dockerfile: Dockerfile-flask
     container_name: flask_service
     ports:
-      - "5000:5000"
+      - "5000:5000"  # Map port 5000 on the host to port 5000 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
     networks:
-      - nexfitra_network
-  
+      - nexfitra_network  # Connect to the custom network
+
+  # Flask application test service
   flask_tests:
     build:
       context: ./flask_app
       dockerfile: Dockerfile-flask-test
     container_name: flask_tests
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # FastAPI application service
   fastapi:
     build:
       context: ./fastapi_app
       dockerfile: Dockerfile-fastapi
     container_name: fastapi_service
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Map port 8000 on the host to port 8000 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # FastAPI application test service
   fastapi_tests:
     build:
       context: ./fastapi_app
       dockerfile: Dockerfile-fastapi-test
     container_name: fastapi_tests
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
-    command: ["poetry", "run", "pytest", "-v"]
+    command: ["poetry", "run", "pytest", "-v"]  # Run tests with pytest
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # PostgreSQL database service
   db:
     image: postgres:16
     container_name: postgres_db
@@ -68,13 +73,14 @@ services:
       FASTAPI_DB_PASSWORD: ${FASTAPI_DB_PASSWORD}
       FASTAPI_DB_NAME: ${FASTAPI_DB_NAME}
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Map port 5432 on the host to port 5432 in the container
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - postgres_data:/var/lib/postgresql/data  # Persist database data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # Initialize the database
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # pgAdmin service for managing PostgreSQL
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_service
@@ -82,17 +88,19 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "5050:80"
+      - "5050:80"  # Map port 5050 on the host to port 80 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgadmin  # Persist pgAdmin data
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+# Define named volumes for persistent data storage
 volumes:
   postgres_data:
   pgadmin_data:
 
+# Define a custom network for the services
 networks:
   nexfitra_network:

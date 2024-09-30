@@ -200,25 +200,8 @@ cd ../fastapi_app
 poetry lock
 ```
 ### 5.4 Set Up Docker: 
-  - Created a .env file holding sensitive data, and made a .env_template for other developers.
-```.env
-# .env_template
-# Use this template to change the defaults and set up your environemnt variables.
-# Save the file as .env once the variables are changed
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=nexfitra
-PGADMIN_DEFAULT_EMAIL=admin@example.com
-PGADMIN_DEFAULT_PASSWORD=admin
+Created Dockerfiles for `flask_app` and `fastapi_app`, including test services for each app; and a docker-compose to build and deploy the two apps, test services, PostgreSQL, and pgAdmin.
 
-FLASK_DB_USER=flask_user
-FLASK_DB_PASSWORD=flask_password
-FLASK_DB_NAME=flask_db
-
-FASTAPI_DB_USER=fastapi_user
-FASTAPI_DB_PASSWORD=fastapi_password
-FASTAPI_DB_NAME=fastapi_db
-```
   - Created Dockerfiles for:
     - Flask (`flask_app/Dockerfile-flask`)
     - Flask Testing (`flask_app/Dockerfile-test`)
@@ -320,18 +303,58 @@ ENV PYTHONPATH=/app
 # Command to run the tests using Poetry
 CMD ["poetry", "run", "pytest", "-v"]
 ```
+  - Created a .env file holding sensitive data, and made a .env_template for other developers.
+```bash
+# .env_template
+# Use this template to change the defaults and set up your environemnt variables.
+# Save the file as .env once the variables are changed
+
+# PostgreSQL configuration
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=nexfitra
+
+# pgAdmin configuration
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=admin
+
+# Flask application database configuration
+FLASK_DB_USER=flask_user
+FLASK_DB_PASSWORD=flask_password
+FLASK_DB_NAME=flask_db
+
+# FastAPI application database configuration
+FASTAPI_DB_USER=fastapi_user
+FASTAPI_DB_PASSWORD=fastapi_password
+FASTAPI_DB_NAME=fastapi_db
+```
   - Added script to create the database users and databases
 ```bash
 # scripts/init-db.sh
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status
 set -e
 
+# Connect to PostgreSQL using the provided username and database name
+# and execute the following SQL commands
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    -- Create a user for the Flask application with the specified password
     CREATE USER $FLASK_DB_USER WITH PASSWORD '$FLASK_DB_PASSWORD';
+    
+    -- Create a database for the Flask application
     CREATE DATABASE $FLASK_DB_NAME;
+    
+    -- Grant all privileges on the Flask database to the Flask user
     GRANT ALL PRIVILEGES ON DATABASE $FLASK_DB_NAME TO $FLASK_DB_USER;
 
+    -- Create a user for the FastAPI application with the specified password
     CREATE USER $FASTAPI_DB_USER WITH PASSWORD '$FASTAPI_DB_PASSWORD';
+    
+    -- Create a database for the FastAPI application
     CREATE DATABASE $FASTAPI_DB_NAME;
+    
+    -- Grant all privileges on the FastAPI database to the FastAPI user
     GRANT ALL PRIVILEGES ON DATABASE $FASTAPI_DB_NAME TO $FASTAPI_DB_USER;
 EOSQL
 ```
@@ -341,34 +364,64 @@ EOSQL
 version: '3.8'
 
 services:
+  # Flask application service
   flask:
     build:
       context: ./flask_app
       dockerfile: Dockerfile-flask
     container_name: flask_service
     ports:
-      - "5000:5000"
+      - "5000:5000"  # Map port 5000 on the host to port 5000 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # Flask application test service
+  flask_tests:
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile-flask-test
+    container_name: flask_tests
+    depends_on:
+      - db  # Ensure the database service is started before this service
+    environment:
+      - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
+    networks:
+      - nexfitra_network  # Connect to the custom network
+
+  # FastAPI application service
   fastapi:
     build:
       context: ./fastapi_app
       dockerfile: Dockerfile-fastapi
     container_name: fastapi_service
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Map port 8000 on the host to port 8000 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # FastAPI application test service
+  fastapi_tests:
+    build:
+      context: ./fastapi_app
+      dockerfile: Dockerfile-fastapi-test
+    container_name: fastapi_tests
+    depends_on:
+      - db  # Ensure the database service is started before this service
+    environment:
+      - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
+    command: ["poetry", "run", "pytest", "-v"]  # Run tests with pytest
+    networks:
+      - nexfitra_network  # Connect to the custom network
+
+  # PostgreSQL database service
   db:
     image: postgres:16
     container_name: postgres_db
@@ -383,13 +436,14 @@ services:
       FASTAPI_DB_PASSWORD: ${FASTAPI_DB_PASSWORD}
       FASTAPI_DB_NAME: ${FASTAPI_DB_NAME}
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Map port 5432 on the host to port 5432 in the container
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      - postgres_data:/var/lib/postgresql/data  # Persist database data
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # Initialize the database
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+  # pgAdmin service for managing PostgreSQL
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_service
@@ -397,22 +451,24 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "5050:80"
+      - "5050:80"  # Map port 5050 on the host to port 80 in the container
     depends_on:
-      - db
+      - db  # Ensure the database service is started before this service
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgadmin  # Persist pgAdmin data
     networks:
-      - nexfitra_network
+      - nexfitra_network  # Connect to the custom network
 
+# Define named volumes for persistent data storage
 volumes:
   postgres_data:
   pgadmin_data:
 
+# Define a custom network for the services
 networks:
   nexfitra_network:
-
 ```
+- Built the images and start the services.
 ```bash
 docker-compose up --build
 ```
@@ -420,6 +476,8 @@ docker-compose up --build
   - The Flask app is available at http://127.0.0.1:5000/.
   - The Fast API is available at http://127.0.0.1:8000/.
   - The pgAdmin home page is available at http://127.0.0.1:5050/.
+
+- Ran pytest tests for each app
 ```bash
 docker-compose up --build flask_tests
 ```
