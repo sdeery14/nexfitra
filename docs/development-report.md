@@ -1,5 +1,23 @@
 # NexFitra Development Report
 
+## Table of Contents
+1. [Project Overview](#1-project-overview)
+2. [Technology Stack](#2-technology-stack)
+3. [Features](#3-features)
+4. [Architecture](#4-architecture)
+5. [Development Setup](#5-development-setup)
+   - [Set up GitHub Repo](#1-set-up-github-repo)
+   - [Set up Bare Minimum Flask and FastAPI apps](#2-set-up-bare-minimum-flask-and-fastapi-apps)
+   - [Set up Poetry](#3-set-up-poetry)
+   - [Set up Docker](#4-set-up-docker)
+6. [Detailed Development Steps](#6-detailed-development-steps)
+   - [Flask Backend](#61-flask-backend)
+   - [FastAPI AI Service](#62-fastapi-ai-service)
+7. [Deployment Strategy](#7-deployment-strategy)
+8. [CI/CD Pipeline](#8-cicd-pipeline)
+9. [Project Timeline](#9-project-timeline)
+10. [Conclusion & Learnings](#10-conclusion--learnings)
+
 ## 1. Project Overview
 This section provides a reflection on the original project overview and any changes or insights gained during development.
 
@@ -440,6 +458,8 @@ Compare the actual timeline to the planned one.
   
 - **Actual Timeline**:
   - Week 1-2: 9/28/2024-10/11/2024 Project Setup
+    - 9/28/2024: set up docker containers for flask, fastapi, postgres, and pgadmin
+    - 9/29/2024: set up test containers for flask and fastapi
 
 
 
