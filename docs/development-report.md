@@ -203,8 +203,10 @@ build-backend = "poetry.core.masonry.api"
 cd ../fastapi_app
 poetry lock
 ```
+
 ### 5.4 Set Up Docker: 
-Created Dockerfiles for `flask_app` and `fastapi_app`, including test services for each app; and a docker-compose to build and deploy the two apps, test services, PostgreSQL, and pgAdmin.
+
+Created Dockerfiles and `docker-compose.yaml`
 
   - Created Dockerfiles for:
     - Flask (`flask_app/Dockerfile-flask`)
@@ -212,6 +214,7 @@ Created Dockerfiles for `flask_app` and `fastapi_app`, including test services f
     - FastAPI (`fastapi_app/Dockerfile-fastapi`)
     - FastAPI Testing (`fastapi_app/Dockerfile-fastapi`)
     - React (`react_app/Dockerfile-react`)
+
 ```dockerfile
 # flask_app/Dockerfile-flask
 
@@ -338,88 +341,64 @@ CMD ["npm", "start"]
 # Use this template to change the defaults and set up your environemnt variables.
 # Save the file as .env once the variables are changed
 
-# PostgreSQL configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=nexfitra
-
-# pgAdmin configuration
-PGADMIN_DEFAULT_EMAIL=admin@example.com
-PGADMIN_DEFAULT_PASSWORD=admin
-
 # Flask application database configuration
 FLASK_DB_USER=flask_user
 FLASK_DB_PASSWORD=flask_password
 FLASK_DB_NAME=flask_db
 
+# Flask test database configuration
+FLASK_TEST_DB_USER=flask_test_user
+FLASK_TEST_DB_PASSWORD=flask_test_password
+FLASK_TEST_DB_NAME=flask_test_db
+
 # FastAPI application database configuration
 FASTAPI_DB_USER=fastapi_user
 FASTAPI_DB_PASSWORD=fastapi_password
 FASTAPI_DB_NAME=fastapi_db
-```
-  - Added script to create the database users and databases
-```bash
-# scripts/init-db.sh
-#!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status
-set -e
+# FastAPI test database configuration
+FASTAPI_TEST_DB_USER=fastapi_test_user
+FASTAPI_TEST_DB_PASSWORD=fastapi_test_password
+FASTAPI_TEST_DB_NAME=fastapi_test_db
 
-# Connect to PostgreSQL using the provided username and database name
-# and execute the following SQL commands
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    -- Create a user for the Flask application with the specified password
-    CREATE USER $FLASK_DB_USER WITH PASSWORD '$FLASK_DB_PASSWORD';
-    
-    -- Create a database for the Flask application
-    CREATE DATABASE $FLASK_DB_NAME;
-    
-    -- Grant all privileges on the Flask database to the Flask user
-    GRANT ALL PRIVILEGES ON DATABASE $FLASK_DB_NAME TO $FLASK_DB_USER;
-
-    -- Create a user for the FastAPI application with the specified password
-    CREATE USER $FASTAPI_DB_USER WITH PASSWORD '$FASTAPI_DB_PASSWORD';
-    
-    -- Create a database for the FastAPI application
-    CREATE DATABASE $FASTAPI_DB_NAME;
-    
-    -- Grant all privileges on the FastAPI database to the FastAPI user
-    GRANT ALL PRIVILEGES ON DATABASE $FASTAPI_DB_NAME TO $FASTAPI_DB_USER;
-EOSQL
+# pgAdmin configuration
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=admin
 ```
   - Used Docker Compose for local development to bring up both services (Flask and FastAPI) and the database.
 ```yaml
 # docker-compose.yaml
 services:
   # Flask application service
-  flask:
+  flask_service:
+    container_name: flask_service
     build:
       context: ./flask_app
       dockerfile: Dockerfile-flask
-    container_name: flask_service
     ports:
       - "5000:5000"  # Map port 5000 on the host to port 5000 in the container
     depends_on:
-      - db  # Ensure the database service is started before this service
+      - flask_db_service  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
     networks:
       - nexfitra_network  # Connect to the custom network
 
   # Flask application test service
-  flask_tests:
+  flask_test_service:
+    container_name: flask_test_service
     build:
       context: ./flask_app
       dockerfile: Dockerfile-flask-test
-    container_name: flask_tests
     depends_on:
-      - db  # Ensure the database service is started before this service
+      - flask_test_db_service  # Ensure the database service is started before this service
     environment:
-      - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
+      - DATABASE_URL=postgresql://${FLASK_TEST_DB_USER}:${FLASK_TEST_DB_PASSWORD}@db:5432/${FLASK_TEST_DB_NAME}
     networks:
       - nexfitra_network  # Connect to the custom network
 
-  react:
+  react-service:
+    container_name: react_service
     build:
       context: ./react_app 
       dockerfile: Dockerfile-react
@@ -428,72 +407,115 @@ services:
       - "3000:3000"  # Map port 3000 on the host to port 3000 in the container
     volumes:
       - ./react_app:/app/react_app  # Mount the react_app directory to /app/react_app in the container
-      - /app/react_app/node_modules  # Ensure node_modules are not overwritten by the host
+      - react_app_node_modules:/app/react_app/node_modules  # Ensure node_modules are not overwritten by the host
     depends_on:
-      - flask  # Ensure the Flask service is started before this service
+      - flask_service  # Ensure the Flask service is started before this service
+    networks:
+      - nexfitra_network  # Connect to the custom network
 
   # FastAPI application service
-  fastapi:
+  fastapi_service:
+    container_name: fastapi_service
     build:
       context: ./fastapi_app
       dockerfile: Dockerfile-fastapi
-    container_name: fastapi_service
     ports:
       - "8000:8000"  # Map port 8000 on the host to port 8000 in the container
     depends_on:
-      - db  # Ensure the database service is started before this service
+      - fastapi_db_service  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
     networks:
       - nexfitra_network  # Connect to the custom network
 
   # FastAPI application test service
-  fastapi_tests:
+  fastapi_test_service:
+    container_name: fastapi_test_service
     build:
       context: ./fastapi_app
       dockerfile: Dockerfile-fastapi-test
-    container_name: fastapi_tests
     depends_on:
-      - db  # Ensure the database service is started before this service
+      - fastapi_test_db_service  # Ensure the database service is started before this service
     environment:
       - DATABASE_URL=postgresql://${FASTAPI_DB_USER}:${FASTAPI_DB_PASSWORD}@db:5432/${FASTAPI_DB_NAME}
     command: ["poetry", "run", "pytest", "-v"]  # Run tests with pytest
     networks:
       - nexfitra_network  # Connect to the custom network
 
-  # PostgreSQL database service
-  db:
+  # PostgreSQL database service for Flask
+  flask_db_service:
+    container_name: flask_db_service
     image: postgres:16
-    container_name: postgres_db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      FLASK_DB_USER: ${FLASK_DB_USER}
-      FLASK_DB_PASSWORD: ${FLASK_DB_PASSWORD}
-      FLASK_DB_NAME: ${FLASK_DB_NAME}
-      FASTAPI_DB_USER: ${FASTAPI_DB_USER}
-      FASTAPI_DB_PASSWORD: ${FASTAPI_DB_PASSWORD}
-      FASTAPI_DB_NAME: ${FASTAPI_DB_NAME}
+      POSTGRES_USER: ${FLASK_DB_USER}
+      POSTGRES_PASSWORD: ${FLASK_DB_PASSWORD}
+      POSTGRES_DB: ${FLASK_DB_NAME} 
     ports:
       - "5432:5432"  # Map port 5432 on the host to port 5432 in the container
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Persist database data
-      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # Initialize the database
+      - flask_postgres_data:/var/lib/postgresql/data  # Persist database data
+    networks:
+      - nexfitra_network  # Connect to the custom network
+  
+  # PostgreSQL database service for the Flask test service
+  flask_test_db_service:
+    container_name: flask_test_db_service
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${FLASK_TEST_DB_USER}
+      POSTGRES_PASSWORD: ${FLASK_TEST_DB_PASSWORD}
+      POSTGRES_DB: ${FLASK_TEST_DB_NAME}
+    ports:
+      - "5433:5432"  # Map port 5433 on the host to port 5432 in the container
+    volumes:
+      - flask_test_postgres_data:/var/lib/postgresql/data  # Persist database data
+    networks:
+      - nexfitra_network  # Connect to the custom network
+
+  # PostgreSQL database service for FastAPI
+  fastapi_db_service:
+    container_name: fastapi_db_service
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${FASTAPI_DB_USER}
+      POSTGRES_PASSWORD: ${FASTAPI_DB_PASSWORD}
+      POSTGRES_DB: ${FASTAPI_DB_NAME}
+    ports:
+      - "5434:5432"  # Map port 5434 on the host to port 5432 in the container
+    volumes:
+      - fastapi_postgres_data:/var/lib/postgresql/data  # Persist database data
+    networks:
+      - nexfitra_network  # Connect to the custom network
+  
+  # PostgreSQL database service for FastAPI test service
+  fastapi_test_db_service:
+    container_name: fastapi_test_db_service
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${FASTAPI_TEST_DB_USER}
+      POSTGRES_PASSWORD: ${FASTAPI_TEST_DB_PASSWORD}
+      POSTGRES_DB: ${FASTAPI_TEST_DB_NAME}
+    ports:
+      - "5435:5432"  # Map port 5435 on the host to port 5432 in the container
+    volumes:
+      - fastapi_test_postgres_data:/var/lib/postgresql/data  # Persist database data
     networks:
       - nexfitra_network  # Connect to the custom network
 
   # pgAdmin service for managing PostgreSQL
-  pgadmin:
-    image: dpage/pgadmin4
+  pgadmin_service:
     container_name: pgadmin_service
+    image: dpage/pgadmin4
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "5050:80"  # Map port 5050 on the host to port 80 in the container
     depends_on:
-      - db  # Ensure the database service is started before this service
+      - flask_db_service   # Ensure the database service is started before this service
+      - flask_test_db_service
+      - fastapi_db_service
+      - fastapi_test_db_service  
     volumes:
       - pgadmin_data:/var/lib/pgadmin  # Persist pgAdmin data
     networks:
@@ -501,8 +523,12 @@ services:
 
 # Define named volumes for persistent data storage
 volumes:
-  postgres_data:
+  flask_postgres_data:
+  flask_test_postgres_data:
+  fastapi_postgres_data:
+  fastapi_test_postgres_data:
   pgadmin_data:
+  react_app_node_modules:
 
 # Define a custom network for the services
 networks:
