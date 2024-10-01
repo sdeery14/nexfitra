@@ -70,8 +70,8 @@ Discuss how the architecture evolved as you built the app.
   - Initialized the plan and report template as a git repo
   - Pushed the repo to a GitHub repo
   - Added README and LICENSE
-### 5.2 Set up Bare Minimum Flask and FastAPI apps
-Created directories for the `flask_app` and `fastapi_app`.
+### 5.2 Set up Bare Minimum Flask, FastAPI, and React apps
+Created directories for the `flask_app`, `fastapi_app`, and `react_app`.
 - Created `flask_app` directory with an empty `__init__.py` file and an `app.py` file.
 ```python
 # flask_app/app.py
@@ -130,6 +130,10 @@ app = FastAPI()
 def read_root():
     # Return a JSON response with a welcome message
     return {"message": "Hello from FastAPI!"}
+```
+- Created the `react_app`
+```bash
+npx create-react-app react_app
 ```
 ### 5.3 Set up Poetry:
 Created `pyproject.toml` files for the `flask_app` and `fastapi_app`, and locked the dependencies.
@@ -207,6 +211,7 @@ Created Dockerfiles for `flask_app` and `fastapi_app`, including test services f
     - Flask Testing (`flask_app/Dockerfile-test`)
     - FastAPI (`fastapi_app/Dockerfile-fastapi`)
     - FastAPI Testing (`fastapi_app/Dockerfile-fastapi`)
+    - React (`react_app/Dockerfile-react`)
 ```dockerfile
 # flask_app/Dockerfile-flask
 
@@ -303,6 +308,30 @@ ENV PYTHONPATH=/app
 # Command to run the tests using Poetry
 CMD ["poetry", "run", "pytest", "-v"]
 ```
+```dockerfile
+# react_app/Dockerfile-react
+
+FROM node:14-alpine
+
+WORKDIR /app
+
+# Install dependencies separately to leverage Docker caching
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy the rest of the app's source code
+COPY . .
+
+# Set the environment to development (can be overridden with Docker Compose)
+ENV NODE_ENV=development
+
+# Expose port 3000 (React development server's default port)
+EXPOSE 3000
+
+# Start the app in development mode
+CMD ["npm", "start"]
+
+```
   - Created a .env file holding sensitive data, and made a .env_template for other developers.
 ```bash
 # .env_template
@@ -361,8 +390,6 @@ EOSQL
   - Used Docker Compose for local development to bring up both services (Flask and FastAPI) and the database.
 ```yaml
 # docker-compose.yaml
-version: '3.8'
-
 services:
   # Flask application service
   flask:
@@ -391,6 +418,19 @@ services:
       - DATABASE_URL=postgresql://${FLASK_DB_USER}:${FLASK_DB_PASSWORD}@db:5432/${FLASK_DB_NAME}
     networks:
       - nexfitra_network  # Connect to the custom network
+
+  react:
+    build:
+      context: ./react_app 
+      dockerfile: Dockerfile-react
+    command: npm start  # Command to start the React application
+    ports:
+      - "3000:3000"  # Map port 3000 on the host to port 3000 in the container
+    volumes:
+      - ./react_app:/app/react_app  # Mount the react_app directory to /app/react_app in the container
+      - /app/react_app/node_modules  # Ensure node_modules are not overwritten by the host
+    depends_on:
+      - flask  # Ensure the Flask service is started before this service
 
   # FastAPI application service
   fastapi:

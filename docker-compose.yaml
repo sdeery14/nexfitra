@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Flask application service
   flask:
@@ -31,16 +29,16 @@ services:
 
   react:
     build:
-      context: ./react_app
+      context: ./react_app 
       dockerfile: Dockerfile-react
-    command: npm start
+    command: npm start  # Command to start the React application
     ports:
-      - "3000:3000"
+      - "3000:3000"  # Map port 3000 on the host to port 3000 in the container
     volumes:
-      - ./react_app:/app/react_app
-      - /app/react_app/node_modules
+      - ./react_app:/app/react_app  # Mount the react_app directory to /app/react_app in the container
+      - /app/react_app/node_modules  # Ensure node_modules are not overwritten by the host
     depends_on:
-      - flask
+      - flask  # Ensure the Flask service is started before this service
 
   # FastAPI application service
   fastapi:
