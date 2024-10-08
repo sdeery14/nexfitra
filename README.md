@@ -13,23 +13,34 @@ NexFitra is a health and fitness app that helps users create and track personali
 
 ## Setup Instructions
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/nexfitra.git
-   cd nexfitra
-    ```
-2. **Install dependencies using Poetry:**
-    ```bash
-    poetry install
-    ```
-3. **Run Docker Compose for development:**
-    ```bash
-    docker-compose up --build
-    ```
-4. **Access the app:**
-- Frontend: http://localhost:3000
-- Flask Backend: http://localhost:5000
-- FastAPI AI Service: http://localhost:8000
+For detailed setup instructions, please see the [setup guide](docs/setup/setup.md).
+
+### 1. **Clone the repository:**
+First, clone the NexFitra repository and navigate to the project directory:
+```bash
+git clone https://github.com/yourusername/nexfitra.git
+cd nexfitra
+```
+### 2. **Set Up Environment Variables**
+Next, create the `.env` file from the provided `.env_template` file:
+```bash
+# Copy the template to a .env file
+cp .env_template .env
+```
+
+### 3. **Update Environment Variables**
+Open the .env file and update the environment variables to secure values. Ensure that passwords and sensitive data are strong and unique:
+```bash
+nano .env
+```
+Edit and replace the placeholders with your secure credentials (e.g., database users, passwords, etc.).
+
+### 4. **Build the Docker Images and Start the Services**
+Once the environment variables are configured, build the Docker images and start the services:
+```bash
+docker-compose up --build
+```
+This command will pull the necessary Docker images, build the containers, and start all the services (Flask, FastAPI, React, PostgreSQL, pgAdmin, etc.).
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
