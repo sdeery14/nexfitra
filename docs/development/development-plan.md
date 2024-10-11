@@ -7,10 +7,8 @@
 3. [Data Sources](#3-data-sources)
 4. [Architecture](#4-architecture)
 5. [Project Timeline](#5-project-timeline)
-6. [Development Setup](#6-development-setup)
-7. [Development Steps](#7-development-steps)
-8. [Deployment Strategy](#8-deployment-strategy)
-9. [CI/CD Pipeline](#9-cicd-pipeline)
+6. [Deployment Strategy](#6-deployment-strategy)
+7. [CI/CD Pipeline](#7-cicd-pipeline)
 
 ## 1. Project Overview
 NexFitra is a health app designed to help users create and track their workouts and diet. Users will input their information such as height, weight, sex, recent workout level, fitness goals, exercises they enjoy, and foods they like. The app will calculate the user's macros and use a generative AI model to suggest a workout schedule and meal plan. Users can save and track their progress, and the app will update the meal plan automatically when their height or weight changes.
@@ -54,8 +52,9 @@ NexFitra is a health app designed to help users create and track their workouts 
 
 ## 5. Project Timeline
 - **Week 1-2**: 
-  - Set up the project structure, development environment, Docker containers for Flask, FastAPI, and PostgreSQL.
-  - Basic UI setup in React with Bootstrap.
+  - Set up the project development environment:
+    - Docker containers for Flask, React, FastAPI, and PostgreSQL.
+    - Docker Compose to set up services
   - Research and select nutrition and recipe APIs.
   - Design database schema to incorporate nutrition, recipe, and workout data.
 - **Week 3-4**: 
@@ -67,9 +66,7 @@ NexFitra is a health app designed to help users create and track their workouts 
     - Workouts page with manual workout creation
     - Diet page with manual diet creation
 - **Week 5-6**: 
-  - Create the FastAPI service for the AI model.
-    - Workout schedule suggestion
-    - Diet plan suggestion
+  - Create pipeline to generate workout plans and meal plans using MLFlow and FastAPI.
   - Test integration between Flask and FastAPI.
 - **Week 7-8**: 
   - Add automatic workout and meal plan updates based on progress.
@@ -80,73 +77,14 @@ NexFitra is a health app designed to help users create and track their workouts 
 - **Week 11-12**: 
   - Launch the production environment and monitor for performance.
 
-## 6. Development Setup
-1. Clone the Repository: `git clone https://github.com/sdeery14/nexfitra.git`
-2. Navigate to the Project Directory: `cd nexfitra`
-3. Set Up Poetry:
-   - Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -`
-   - Initialize Poetry in the project: `poetry init`
-   - Add dependencies (e.g., Flask, FastAPI, PostgreSQL, etc.) via Poetry: `poetry add flask fastapi uvicorn psycopg2-binary`
-4. Set Up Docker: 
-   - Create Dockerfiles for both Flask (`Dockerfile-flask`) and FastAPI (`Dockerfile-fastapi`).
-   - Use Docker Compose for local development to bring up both services (Flask and FastAPI) and the database.
-5. Run Docker Compose: `docker-compose up --build`
-   - Access the Flask App at `http://localhost:5000`
-   - Access the FastAPI Service at `http://localhost:8000`
-6. Access the Application: Open `http://localhost:3000` for the frontend and interact with the backend Flask API and AI FastAPI service through their respective endpoints.
-
-## 7. Development Steps
-1. Data Integration (Week 2-3)
-   - Set up connections to chosen nutrition and recipe APIs
-   - Design and implement the workout exercise database
-   - Create data models and database schema for storing and caching external data
-   - Implement data update and synchronization mechanisms
-
-2. Frontend Development (Week 3-4)
-   - Implement user authentication UI
-   - Create user profile management pages
-   - Design and implement user intake form
-   - Develop schedule, workout, and diet pages with manual creation functionality
-
-3. Backend Development (Week 3-4)
-   - Implement user authentication in Flask
-   - Create API endpoints for user profile management
-   - Develop logic for manual schedule, workout, and diet creation
-   - Implement data retrieval and caching mechanisms for nutrition and recipe data
-   - Create API endpoints for accessing workout exercises
-
-4. AI Model Development (Week 5-6)
-   - Set up MLflow for experiment tracking
-   - Select and fine-tune AI models for workout and diet suggestions
-   - Implement FastAPI endpoints for AI model inference
-   - Integrate FastAPI service with Flask backend
-   - Incorporate nutrition, recipe, and workout data into the AI model training process
-   - Develop algorithms for meal and workout plan generation using the available data
-
-5. Integration and Testing (Week 7-8)
-   - Connect frontend with backend APIs
-   - Implement automatic workout and meal plan updates
-   - Conduct thorough testing of all features
-
-6. Optimization and Deployment Preparation (Week 9-10)
-   - Optimize AI model performance
-   - Set up CI/CD pipeline
-   - Deploy to staging environment
-   - Conduct end-to-end testing and fix bugs
-
-7. Production Launch (Week 11-12)
-   - Deploy to production environment
-   - Monitor application performance
-   - Gather and analyze user feedback
-
-## 8. Deployment Strategy
+## 6. Deployment Strategy
 - Local Development: Use Docker Compose to spin up services locally. Both Flask and FastAPI will run in separate containers and interact over REST APIs.
 - Staging Environment: Deploy the application to a Kubernetes cluster with separate services for Flask (backend), FastAPI (AI service), and PostgreSQL (database).
 - Production Environment: Set up Kubernetes in a cloud environment (e.g., AWS, GCP) to handle scaling and orchestration for production traffic.
 - Ensure proper configuration of API keys and database connections for accessing nutrition and recipe data in all environments.
 - Set up scheduled tasks for regular updates of cached nutrition and recipe data.
 
-## 9. CI/CD Pipeline
+## 7. CI/CD Pipeline
 - Continuous Integration:
   - Automated tests for both Flask and FastAPI services.
   - Linting and static code analysis to ensure code quality.
