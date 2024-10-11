@@ -50,7 +50,24 @@ NexFitra is a health app designed to help users create and track their workouts 
 - Monitoring and Logging: Tools such as Prometheus and Grafana for real-time performance monitoring and error logging.
 - Backup and Recovery: Regular backups of user data and workout history to prevent data loss in case of failure.
 
-## 5. Project Timeline
+## 5. Deployment Strategy
+- Local Development: Use Docker Compose to spin up services locally. Both Flask and FastAPI will run in separate containers and interact over REST APIs.
+- Staging Environment: Deploy the application to a Kubernetes cluster with separate services for Flask (backend), FastAPI (AI service), and PostgreSQL (database).
+- Production Environment: Set up Kubernetes in a cloud environment (e.g., AWS, GCP) to handle scaling and orchestration for production traffic.
+- Ensure proper configuration of API keys and database connections for accessing nutrition and recipe data in all environments.
+- Set up scheduled tasks for regular updates of cached nutrition and recipe data.
+
+## 6. CI/CD Pipeline
+- Continuous Integration:
+  - Automated tests for both Flask and FastAPI services.
+  - Linting and static code analysis to ensure code quality.
+- Continuous Deployment:
+  - Automated deployment to Kubernetes using GitHub Actions.
+  - Set up different environments (staging and production) with separate pipelines.
+  - Docker image building for both Flask and FastAPI, pushed to a container registry (e.g., Docker Hub or AWS ECR).
+
+  
+## 7. Project Timeline
 - **Week 1-2**: 
   - Set up the project development environment:
     - Docker containers for Flask, React, FastAPI, and PostgreSQL.
@@ -76,19 +93,3 @@ NexFitra is a health app designed to help users create and track their workouts 
   - Perform end-to-end testing and bug fixes.
 - **Week 11-12**: 
   - Launch the production environment and monitor for performance.
-
-## 6. Deployment Strategy
-- Local Development: Use Docker Compose to spin up services locally. Both Flask and FastAPI will run in separate containers and interact over REST APIs.
-- Staging Environment: Deploy the application to a Kubernetes cluster with separate services for Flask (backend), FastAPI (AI service), and PostgreSQL (database).
-- Production Environment: Set up Kubernetes in a cloud environment (e.g., AWS, GCP) to handle scaling and orchestration for production traffic.
-- Ensure proper configuration of API keys and database connections for accessing nutrition and recipe data in all environments.
-- Set up scheduled tasks for regular updates of cached nutrition and recipe data.
-
-## 7. CI/CD Pipeline
-- Continuous Integration:
-  - Automated tests for both Flask and FastAPI services.
-  - Linting and static code analysis to ensure code quality.
-- Continuous Deployment:
-  - Automated deployment to Kubernetes using GitHub Actions.
-  - Set up different environments (staging and production) with separate pipelines.
-  - Docker image building for both Flask and FastAPI, pushed to a container registry (e.g., Docker Hub or AWS ECR).
