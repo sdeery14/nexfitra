@@ -7,59 +7,35 @@
 4. [Docker Configuration](#4-docker-configuration)
 5. [Environment Configuration](#5-environment-configuration)
 6. [Service Orchestration](#6-service-orchestration)
-7. [Testing Setup](#7-testing-setup)
 
 ## 1. GitHub Repository Setup
 - Initialized the plan and report template as a git repository
 - Pushed the repository to GitHub
 - Added README and LICENSE files
 
-## 2. Application Setup
-### 2.1 Flask Application
-Created `flask_app` directory with:
-- Empty `__init__.py` file
-- `app.py` file containing a basic Flask application:
-  ```python
-  from flask import Flask, jsonify
+## 2. Set up Bare Minimum Applications
 
-  app = Flask(__name__)
-
-  @app.route('/')
-  def hello():
-      return jsonify(message="Hello from Flask!")
-
-  if __name__ == '__main__':
-      app.run(host='0.0.0.0', port=5000)
-  ```
-
-### 2.2 FastAPI Application
-Created `fastapi_app` directory with:
-- Empty `__init__.py` file
-- `app.py` file containing a basic FastAPI application:
-  ```python
-  from fastapi import FastAPI
-
-  app = FastAPI()
-
-  @app.get("/")
-  def read_root():
-      return {"message": "Hello from FastAPI!"}
-  ```
-
-### 2.3 React Application
-Created `react_app` using Create React App:
-```bash
-npx create-react-app react_app
-```
-
-## 3. Dependency Management
-### 3.1 Poetry Installation
 Installed Poetry using the official installation script:
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
+### 2.1 Flask Application
+Created `flask_app` directory with:
+- Empty `__init__.py` file
+- `app.py` file containing a basic Flask application:
+```python
+from flask import Flask, jsonify
 
-### 3.2 Flask Application Dependencies
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return jsonify(message="Hello from Flask!")
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+```
+
 Created `pyproject.toml` for Flask application:
 ```toml
 [tool.poetry]
@@ -85,8 +61,73 @@ pytest = "^8.3.3"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
+Locked dependencies:
+```bash
+cd flask_app
+poetry lock
+cd ..
+```
+Created `Dockerfile-flask` in the `flask_app` directory:
+```dockerfile
+FROM python:3.12-slim
 
-### 3.3 FastAPI Application Dependencies
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry && poetry install --no-root
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["poetry", "run", "flask", "run", "--host=0.0.0.0", "--port=5000"]
+```
+
+Created `Dockerfile-flask-test` in the `flask_app` directory:
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry && poetry install --no-root
+
+COPY . .
+
+ENV PYTHONPATH=/app
+
+CMD ["poetry", "run", "pytest"]
+```
+
+Created a `.env` file in the root directory and added the environment variables for flask.
+```bash
+# Flask application database configuration
+FLASK_DB_USER=flask_user
+FLASK_DB_PASSWORD=flask_password
+FLASK_DB_NAME=flask_db
+FLASK_DB_HOST=localhost
+FLASK_DB_PORT=5432
+
+# Flask test database configuration
+FLASK_TEST_DB_USER=flask_test_user
+FLASK_TEST_DB_PASSWORD=flask_test_password
+FLASK_TEST_DB_NAME=flask_test_db
+```
+
+### 2.2 FastAPI Application
+Created `fastapi_app` directory with:
+- Empty `__init__.py` file
+- `app.py` file containing a basic FastAPI application:
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from FastAPI!"}
+```
+
 Created `pyproject.toml` for FastAPI application:
 ```toml
 [tool.poetry]
@@ -114,52 +155,13 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
 
-### 3.4 Dependency Locking
-Locked dependencies for both applications:
+Locked dependencies:
 ```bash
-cd flask_app
+cd fastapi_app
 poetry lock
-
-cd ../fastapi_app
-poetry lock
+cd ..
 ```
 
-## 4. Docker Configuration
-### 4.1 Flask Application Dockerfile
-Created `Dockerfile-flask` in the `flask_app` directory:
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-
-COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && poetry install --no-root
-
-COPY . .
-
-EXPOSE 5000
-
-CMD ["poetry", "run", "flask", "run", "--host=0.0.0.0", "--port=5000"]
-```
-
-### 4.2 Flask Testing Dockerfile
-Created `Dockerfile-flask-test` in the `flask_app` directory:
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-
-COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && poetry install --no-root
-
-COPY . .
-
-ENV PYTHONPATH=/app
-
-CMD ["poetry", "run", "pytest"]
-```
-
-### 4.3 FastAPI Application Dockerfile
 Created `Dockerfile-fastapi` in the `fastapi_app` directory:
 ```dockerfile
 FROM python:3.12-slim
@@ -176,7 +178,6 @@ EXPOSE 8000
 CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### 4.4 FastAPI Testing Dockerfile
 Created `Dockerfile-fastapi-test` in the `fastapi_app` directory:
 ```dockerfile
 FROM python:3.12-slim
@@ -193,7 +194,26 @@ ENV PYTHONPATH=/app
 CMD ["poetry", "run", "pytest", "-v"]
 ```
 
-### 4.5 React Application Dockerfile
+Added environment variables for `fastapi_app` to the `.env` file.
+```bash
+# FastAPI application database configuration
+FASTAPI_DB_USER=fastapi_user
+FASTAPI_DB_PASSWORD=fastapi_password
+FASTAPI_DB_NAME=fastapi_db
+
+# FastAPI test database configuration
+FASTAPI_TEST_DB_USER=fastapi_test_user
+FASTAPI_TEST_DB_PASSWORD=fastapi_test_password
+FASTAPI_TEST_DB_NAME=fastapi_test_db
+```
+
+
+### 2.3 React Application
+Created `react_app` using Create React App:
+```bash
+npx create-react-app react_app
+```
+
 Created `Dockerfile-react` in the `react_app` directory:
 ```dockerfile
 FROM node:14-alpine
@@ -212,8 +232,93 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
-## 5. Environment Configuration
-Created a `.env` file for sensitive data and a `.env_template` for other developers:
+### 2.4 Airflow Application
+Created directory `airflow_app`.
+
+Created the `pyproject.toml` in the `airflow_app` directory.
+
+```toml
+[tool.poetry]
+name = "nexfitra-airflow"
+version = "0.1.0"
+description = "Airflow setup for pulling data from USDA API to Flask database"
+authors = ["Sean Deery <sean@nexfitra.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+apache-airflow = "^2.5.1"
+psycopg2-binary = "^2.9.3" # PostgreSQL adapter for Airflow DB and Flask DB connection
+requests = "^2.31.0" # For making HTTP requests to USDA API
+cryptography = "^3.4.8" # Used for generating Fernet keys and required by Airflow
+sqlalchemy = "^1.4" # ORM for database operations
+
+[tool.poetry.extras]
+# Optional extras if needed, e.g., depending on specific use cases
+# aws = ["apache-airflow[amazon]"]
+# gcp = ["apache-airflow[gcp]"]
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0" # Unit testing
+pytest-cov = "^4.1.0" # Code coverage reporting for tests
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+```
+
+Created `Dockerfile-airflow` in the `airflow_app` directory.
+
+```Dockerfile
+# Use the official Apache Airflow image from Docker Hub
+FROM apache/airflow:2.10.2
+
+# Set the working directory inside the container
+WORKDIR /opt/airflow
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the Airflow DAGs and files to the working directory
+COPY . .
+
+# Expose the port for the Airflow webserver
+EXPOSE 8080
+
+# Command to run the Airflow scheduler (you can adjust this for webserver, etc.)
+CMD ["poetry", "run", "airflow", "scheduler"]
+```
+
+Created Fernet key
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Created secret key for Airflow.
+```
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Added environment variables to `.env` file.
+```bash
+# Airflow database configuration
+AIRFLOW_DB_USER=airflow_user
+AIRFLOW_DB_PASSWORD=airflow_password
+AIRFLOW_DB_NAME=airflow_db
+AIRFLOW_DB_HOST=airflow_db
+AIRFLOW_DB_PORT=5432
+
+# Airflow configuration
+AIRFLOW_FERNET_KEY=airflow_fernet_key
+AIRFLOW_SECRET_KEY=airflow_secret_key
+```
+
+
+## 3. Environment Configuration
+Below is the full environment variables template `env_template`:
 ```bash
 # .env_template
 # Save the file as .env and use as a template to change the defaults and set up your environemnt variables.
@@ -243,7 +348,15 @@ PGADMIN_DEFAULT_EMAIL=admin@example.com
 PGADMIN_DEFAULT_PASSWORD=admin
 ```
 
-## 6. Service Orchestration
+## 4. Set up Docker Compose for Service Orchestration
+
+Added environment variables for pgAdmin to the `.env` file.
+```
+# pgAdmin configuration
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=admin
+```
+
 Created `docker-compose.yaml` for local development:
 ```yaml
 services:
@@ -389,18 +502,5 @@ volumes:
 
 networks:
   nexfitra_network:
-```
-
-## 7. Testing Setup
-Set up pytest for both Flask and FastAPI applications. Test execution commands:
-
-For Flask:
-```bash
-docker-compose up --build flask_tests
-```
-
-For FastAPI:
-```bash
-docker-compose up --build fastapi_tests
 ```
 

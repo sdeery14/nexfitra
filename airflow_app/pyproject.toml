@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "nexfitra-airflow"
+version = "0.1.0"
+description = "Airflow setup for pulling data from USDA API to Flask database"
+authors = ["Sean Deery <sean@nexfitra.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+apache-airflow = "^2.5.1"
+psycopg2-binary = "^2.9.3" # PostgreSQL adapter for Airflow DB and Flask DB connection
+requests = "^2.31.0" # For making HTTP requests to USDA API
+cryptography = "^3.4.8" # Used for generating Fernet keys and required by Airflow
+sqlalchemy = "^1.4" # ORM for database operations
+
+[tool.poetry.extras]
+# Optional extras if needed, e.g., depending on specific use cases
+# aws = ["apache-airflow[amazon]"]
+# gcp = ["apache-airflow[gcp]"]
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0" # Unit testing
+pytest-cov = "^4.1.0" # Code coverage reporting for tests
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

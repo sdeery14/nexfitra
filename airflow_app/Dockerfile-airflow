@@ -1,0 +1,20 @@
+# Use the official Apache Airflow image from Docker Hub
+FROM apache/airflow:2.10.2
+
+# Set the working directory inside the container
+WORKDIR /opt/airflow
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the Airflow DAGs and files to the working directory
+COPY . .
+
+# Expose the port for the Airflow webserver
+EXPOSE 8080
+
+# Command to run the Airflow scheduler (you can adjust this for webserver, etc.)
+CMD ["poetry", "run", "airflow", "scheduler"]
