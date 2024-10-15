@@ -2,11 +2,13 @@
 
 ## Table of Contents
 1. [GitHub Repository Setup](#1-github-repository-setup)
-2. [Application Setup](#2-application-setup)
-3. [Dependency Management](#3-dependency-management)
-4. [Docker Configuration](#4-docker-configuration)
-5. [Environment Configuration](#5-environment-configuration)
-6. [Service Orchestration](#6-service-orchestration)
+2. [Set up Bare Minimum Applications](#2-set-up-bare-minimum-applications)
+   1. [Flask Application](#21-flask-application)
+   2. [FastAPI Application](#22-fastapi-application)
+   3. [React Application](#23-react-application)
+   4. [Airflow Application](#24-airflow-application)
+3. [Environment Configuration](#3-environment-configuration)
+4. [Set up Docker Compose for Service Orchestration](#4-set-up-docker-compose-for-service-orchestration)
 
 ## 1. GitHub Repository Setup
 - Initialized the plan and report template as a git repository

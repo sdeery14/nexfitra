@@ -167,7 +167,7 @@ services:
     volumes:
       - ./airflow_app:/opt/airflow/dags  # DAG files for Airflow tasks
       - ./logs:/opt/airflow/logs  # Logs for monitoring
-    command: scheduler
+    command: ["airflow", "scheduler"]
     networks:
       - nexfitra_network
 
@@ -185,12 +185,12 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db:5432/${AIRFLOW_DB_NAME}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db:5432/${AIRFLOW_DB_NAME}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
     volumes:
       - ./airflow_app:/opt/airflow/dags  # DAG files for Airflow tasks
       - ./logs:/opt/airflow/logs  # Logs for monitoring
-    command: webserver
+    command: ["airflow", "webserver"]
     networks:
       - nexfitra_network
   

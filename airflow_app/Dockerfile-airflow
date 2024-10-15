@@ -13,8 +13,21 @@ RUN pip install poetry && poetry install --no-root
 # Copy the rest of the Airflow DAGs and files to the working directory
 COPY . .
 
+# Switch to the root user to adjust permissions
+USER root
+
+# Copy the entrypoint script to the container and set it to be executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Switch back to airflow user
+USER airflow
+
 # Expose the port for the Airflow webserver
 EXPOSE 8080
 
-# Command to run the Airflow scheduler (you can adjust this for webserver, etc.)
+# Set the entrypoint to use the custom entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command for the container - this can be adjusted by the docker-compose file
 CMD ["poetry", "run", "airflow", "scheduler"]
