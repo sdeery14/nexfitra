@@ -26,8 +26,5 @@ USER airflow
 # Expose the port for the Airflow webserver
 EXPOSE 8080
 
-# Set the entrypoint to use the custom entrypoint script
-ENTRYPOINT ["/entrypoint.sh"]
-
 # Default command for the container - this can be adjusted by the docker-compose file
 CMD ["poetry", "run", "airflow", "scheduler"]
