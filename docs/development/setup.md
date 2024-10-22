@@ -1,4 +1,4 @@
-# Development Setup Report
+# Development Setup with Flask, FastAPI, React, Airflow, and PostgreSQL
 
 ## Table of Contents
 1. [GitHub Repository Setup](#1-github-repository-setup)
@@ -11,40 +11,266 @@
 4. [Set up Docker Compose for Service Orchestration](#4-set-up-docker-compose-for-service-orchestration)
 
 ## 1. GitHub Repository Setup
-- Initialized the plan and report template as a git repository
-- Pushed the repository to GitHub
-- Added README and LICENSE files
+
+Create a directory for the project named `nexfitra` with the following directories and files. These files are filled out to record the development process and provide developers a guide to set up the project environment on their local machine.
+
+- `nexfitra/`
+  - `docs/`
+    - `developer-guides/`
+      - `setup.md`
+    - `development/`
+      - `development-plan.md`
+      - `development-report.md`
+      - `development-setup.md`
+  - `.env`
+  - `.env-template`
+  - `.gitignore`
+  - `LICENSE`
+  - `README.md`
+
+Use a `.gitignore` for python and make sure it contains `.env` to protect sensitive information.
+
+```.gitignore
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# poetry
+#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+#   This is especially recommended for binary packages to ensure reproducibility, and is more
+#   commonly ignored for libraries.
+#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+#poetry.lock
+
+# pdm
+#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+#pdm.lock
+#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   in version control.
+#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
+#  and can be added to the global gitignore or merged into this file.  For a more nuclear
+#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
+#.idea/
+
+```
+
+Initialize the `nexfitra` directory` as a git repository.
+
+Push the repository to GitHub.
 
 ## 2. Set up Bare Minimum Applications
 
-Installed Poetry using the official installation script:
+Install Poetry using the official installation script:
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 ### 2.1 Flask Application
-Created `flask_app` directory with:
-- Empty `__init__.py` file
-- `app.py` file containing a basic Flask application:
+
+Create `flask_app` directory with the following structure.
+- `flask_app/`
+  - `tests/`
+    - `test_app.py`
+  - `__init__.py`
+  - `app.py`
+  - `Dockerfile-flas`
+  - `Dockerfile-flask-test`
+  - `pyproject.toml`
+
+
+Leave the `__init__.py` file empty.
+
+The `app.py` file contains a basic Flask application:
 ```python
+# Import Flask and jsonify from the flask package
 from flask import Flask, jsonify
 
+# Create an instance of the Flask class
 app = Flask(__name__)
 
+# Define a route for the root URL ('/')
 @app.route('/')
 def hello():
+    # Return a JSON response with a greeting message
     return jsonify(message="Hello from Flask!")
 
+# Check if the script is run directly (and not imported as a module)
 if __name__ == '__main__':
+    # Run the Flask web server on host '0.0.0.0' and port '5000'
     app.run(host='0.0.0.0', port=5000)
 ```
+The `test_app.py` file runs a simple test.
+```python
+import pytest
+from app import app
 
-Created `pyproject.toml` for Flask application:
+# Define a pytest fixture named 'client' that sets up a test client for the Flask app
+@pytest.fixture
+def client():
+    # Use the Flask app's test client for the duration of the test
+    with app.test_client() as client:
+        yield client  # Provide the test client to the test functions
+
+# Define a test function that uses the 'client' fixture
+def test_hello(client):
+    # Send a GET request to the root URL of the Flask app
+    response = client.get('/')
+    
+    # Assert that the response status code is 200 (OK)
+    assert response.status_code == 200
+    
+    # Assert that the response JSON data matches the expected dictionary
+    assert response.get_json() == {"message": "Hello from Flask!"}
+```
+
+The `pyproject.toml` contains the dependencies for Flask application:
 ```toml
 [tool.poetry]
 name = "flask-app"
 version = "0.1.0"
 description = "Flask app for handling business logic and user authentication"
-authors = ["Sean Deery sean@nexfitra.com"]
+authors = ["Sean Deery <sean@nexfitra.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -63,45 +289,61 @@ pytest = "^8.3.3"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
-Locked dependencies:
+Lock the dependencies:
 ```bash
 cd flask_app
 poetry lock
 cd ..
 ```
-Created `Dockerfile-flask` in the `flask_app` directory:
+The `Dockerfile-flask` file sets up the environment to run the Flask app.
 ```dockerfile
+# Use the official Python 3.12 image from the Docker Hub
 FROM python:3.12-slim
 
+# Set the working directory inside the container
 WORKDIR /app
 
+# Copy the Poetry files and project dependencies to the working directory
 COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
 RUN pip install poetry && poetry install --no-root
 
+# Copy the rest of the Flask app code to the working directory
 COPY . .
 
+# Expose the port for Flask
 EXPOSE 5000
 
+# Command to run the Flask app
 CMD ["poetry", "run", "flask", "run", "--host=0.0.0.0", "--port=5000"]
 ```
 
-Created `Dockerfile-flask-test` in the `flask_app` directory:
+The `Dockerfile-flask-test` sets up the environment to run the tests for the Flask app.
 ```dockerfile
+# Use the official Python 3.12 image from the Docker Hub
 FROM python:3.12-slim
 
+# Set the working directory inside the container
 WORKDIR /app
 
+# Copy the Poetry files and project dependencies to the working directory
 COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
 RUN pip install poetry && poetry install --no-root
 
+# Copy the rest of the Flask app code to the working directory
 COPY . .
 
+# Add /app to the Python path
 ENV PYTHONPATH=/app
 
+# Command to run the tests using Poetry
 CMD ["poetry", "run", "pytest"]
 ```
 
-Created a `.env` file in the root directory and added the environment variables for flask.
+Add the environment variables for the Flask app to the `.env` file.
 ```bash
 # Flask application database configuration
 FLASK_DB_USER=flask_user
@@ -117,32 +359,49 @@ FLASK_TEST_DB_NAME=flask_test_db
 ```
 
 ### 2.2 FastAPI Application
-Created `fastapi_app` directory with:
-- Empty `__init__.py` file
-- `app.py` file containing a basic FastAPI application:
+Created `fastapi_app` directory with the following structure:
+- `fastapi_app/`
+  - `tests/`
+    - `test_app.py`
+  - `__init__.py`
+  - `app.py`
+  - `Dockerfile-fastapi`
+  - `Dockerfile-fastapi-test`
+  - `pyproject.toml`
+
+Leave the `__init__.py` file empty.
+
+The `app.py` file contains a basic FastAPI application:
 ```python
+# Import FastAPI from the fastapi package
 from fastapi import FastAPI
 
+# Create an instance of the FastAPI class
 app = FastAPI()
 
+# Define a route for the root URL ('/')
 @app.get("/")
 def read_root():
+    # Return a JSON response with a welcome message
     return {"message": "Hello from FastAPI!"}
 ```
 
-Created `pyproject.toml` for FastAPI application:
+The `pyproject.toml` contains the dependencies for FastAPI application:
 ```toml
 [tool.poetry]
 name = "fastapi-app"
 version = "0.1.0"
 description = "FastAPI app for serving AI-generated content"
-authors = ["Sean Deery sean@nexfitra.com"]
+authors = ["Sean Deery <sean@nexfitra.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.95.2"
 uvicorn = "^0.21.1"
 transformers = "^4.28.0"
+# Optional: torch or tensorflow depending on the models you're using
+# torch = "^2.0.0"
+# tensorflow = "^2.12.0"
 psycopg2-binary = "^2.9.7"
 
 [tool.pytest.ini_options]
@@ -157,46 +416,62 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 ```
 
-Locked dependencies:
+Lock the dependencies.
 ```bash
 cd fastapi_app
 poetry lock
 cd ..
 ```
 
-Created `Dockerfile-fastapi` in the `fastapi_app` directory:
+The `Dockerfile-fastapi` sets up the environment to run the FastAPI app:
 ```dockerfile
+# Use the official Python 3.12 image from the Docker Hub
 FROM python:3.12-slim
 
+# Set the working directory inside the container
 WORKDIR /app
 
+# Copy the Poetry files and project dependencies to the working directory
 COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
 RUN pip install poetry && poetry install --no-root
 
+# Copy the rest of the FastAPI app code to the working directory
 COPY . .
 
+# Expose the port for FastAPI
 EXPOSE 8000
 
+# Command to run the FastAPI app
 CMD ["poetry", "run", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-Created `Dockerfile-fastapi-test` in the `fastapi_app` directory:
+The `Dockerfile-fastapi-test` sets up the environment to run the FastAPI tests:
 ```dockerfile
+# Use the official Python 3.12 image from the Docker Hub
 FROM python:3.12-slim
 
+# Set the working directory inside the container
 WORKDIR /app
 
+# Copy the Poetry files and project dependencies to the working directory
 COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
 RUN pip install poetry && poetry install --no-root
 
+# Copy the rest of the FastAPI app code to the working directory
 COPY . .
 
+# Add /app to the Python path
 ENV PYTHONPATH=/app
 
+# Command to run the tests using Poetry
 CMD ["poetry", "run", "pytest", "-v"]
 ```
 
-Added environment variables for `fastapi_app` to the `.env` file.
+Add environment variables for `fastapi_app` to the `.env` file.
 ```bash
 # FastAPI application database configuration
 FASTAPI_DB_USER=fastapi_user
@@ -211,27 +486,33 @@ FASTAPI_TEST_DB_NAME=fastapi_test_db
 
 
 ### 2.3 React Application
-Created `react_app` using Create React App:
+Create `react_app` directory using Create React App:
 ```bash
 npx create-react-app react_app
 ```
 
-Created `Dockerfile-react` in the `react_app` directory:
+Add `Dockerfile-react` to the `react_app` directory that sets up the environment to run the react app.
 ```dockerfile
 FROM node:14-alpine
 
 WORKDIR /app
 
+# Install dependencies separately to leverage Docker caching
 COPY package.json package-lock.json ./
 RUN npm install
 
+# Copy the rest of the app's source code
 COPY . .
 
+# Set the environment to development (can be overridden with Docker Compose)
 ENV NODE_ENV=development
 
+# Expose port 3000 (React development server's default port)
 EXPOSE 3000
 
+# Start the app in development mode
 CMD ["npm", "start"]
+
 ```
 
 ### 2.4 Airflow Application

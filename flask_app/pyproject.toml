@@ -2,7 +2,7 @@
 name = "flask-app"
 version = "0.1.0"
 description = "Flask app for handling business logic and user authentication"
-authors = ["Sean Deery sean@nexfitra.com"]
+authors = ["Sean Deery <sean@nexfitra.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"

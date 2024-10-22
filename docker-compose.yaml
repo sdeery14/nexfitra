@@ -233,6 +233,44 @@ services:
       - airflow_postgres_data:/var/lib/postgresql/data  # Persist database data
     networks:
       - nexfitra_network
+    
+  # Airflow Test Service
+  airflow_test:
+    build:
+      context: ./airflow_app
+      dockerfile: Dockerfile-airflow-test
+    container_name: airflow_test
+    depends_on:
+      - airflow_test_db
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_TEST_DB_USER}:${AIRFLOW_TEST_DB_PASSWORD}@airflow_test_db:5432/${AIRFLOW_TEST_DB_NAME}
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
+    volumes:
+      - airflow_dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - ./airflow_app/tests:/opt/airflow/tests  # Mount the tests directory
+    networks:
+      - nexfitra_network
+    env_file:
+      - .env
+    restart: "no"
+
+
+  # Airflow Test Database (Postgres)
+  airflow_test_db:
+    image: postgres:16
+    container_name: airflow_test_db
+    environment:
+      POSTGRES_USER: ${AIRFLOW_TEST_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_TEST_DB_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_TEST_DB_NAME}
+    volumes:
+      - airflow_test_postgres_data:/var/lib/postgresql/data  # Persist test database data
+    networks:
+      - nexfitra_network
+
 
 
 # Define named volumes for persistent data storage
@@ -244,6 +282,7 @@ volumes:
   pgadmin_data:
   react_app_node_modules:
   airflow_postgres_data:
+  airflow_test_postgres_data:
   airflow_logs:
   airflow_dags:
 

@@ -2,7 +2,7 @@
 name = "fastapi-app"
 version = "0.1.0"
 description = "FastAPI app for serving AI-generated content"
-authors = ["Sean Deery sean@nexfitra.com"]
+authors = ["Sean Deery <sean@nexfitra.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"

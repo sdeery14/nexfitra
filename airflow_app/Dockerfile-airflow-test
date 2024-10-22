@@ -1,0 +1,27 @@
+# Use the official Apache Airflow image from Docker Hub
+FROM apache/airflow:2.10.2
+
+# Set the working directory inside the container
+WORKDIR /opt/airflow
+
+# Copy the Poetry files and project dependencies to the working directory
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install poetry && poetry install --no-root
+
+# Copy the rest of the Airflow DAGs and files to the working directory
+COPY . .
+
+# Copy the test entrypoint script
+COPY entrypoint_test.sh /entrypoint_test.sh
+
+# Switch to root user to change the permissions of the entrypoint script
+USER root
+RUN chmod +x /entrypoint_test.sh
+
+# Switch back to airflow user
+USER airflow
+
+# Set the entrypoint to the test script
+ENTRYPOINT ["/entrypoint_test.sh"]
