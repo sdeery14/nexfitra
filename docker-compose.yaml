@@ -27,7 +27,8 @@ services:
     networks:
       - nexfitra_network  # Connect to the custom network
 
-  react-service:
+  # React application service
+  react_service:
     container_name: react_service
     build:
       context: ./react_app 
@@ -140,27 +141,25 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "5050:80"  # Map port 5050 on the host to port 80 in the container
-    depends_on:
-      - flask_db_service   # Ensure the database service is started before this service
-      - flask_test_db_service
-      - fastapi_db_service
-      - fastapi_test_db_service  
+      - "5050:80"  # Map port 5050 on the host to port 80 in the container  
     volumes:
       - pgadmin_data:/var/lib/pgadmin  # Persist pgAdmin data
     networks:
       - nexfitra_network  # Connect to the custom network
 
   # Airflow Init Service
-  airflow_init:
+  airflow_init_service:
     build:
       context: ./airflow_app
       dockerfile: Dockerfile-airflow
-    container_name: airflow_init
+    container_name: airflow_init_service
+    depends_on:
+      airflow_db_service:
+        condition: service_healthy
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db:5432/${AIRFLOW_DB_NAME}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db_service:5432/${AIRFLOW_DB_NAME}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
     volumes:
       - airflow_dags:/opt/airflow/dags
@@ -173,18 +172,20 @@ services:
     restart: "no"
 
   # Airflow Scheduler
-  airflow_scheduler:
+  airflow_scheduler_service:
     build:
       context: ./airflow_app
       dockerfile: Dockerfile-airflow
-    container_name: airflow_scheduler
+    container_name: airflow_scheduler_service
     depends_on:
-      - airflow_db
-      - airflow_init
+      airflow_db_service:
+        condition: service_healthy
+      airflow_init_service:
+        condition: service_completed_successfully
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db:5432/${AIRFLOW_DB_NAME}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db_service:5432/${AIRFLOW_DB_NAME}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
     volumes:
       - airflow_dags:/opt/airflow/dags  # DAG files for Airflow tasks
@@ -196,21 +197,28 @@ services:
       - .env
 
   # Airflow Webserver
-  airflow_webserver:
+  airflow_webserver_service:
     build:
       context: ./airflow_app
       dockerfile: Dockerfile-airflow
-    container_name: airflow_webserver
+    container_name: airflow_webserver_service
     depends_on:
-      - airflow_db
-      - airflow_scheduler
-      - airflow_init
+      airflow_db_service:
+        condition: service_healthy
+      airflow_scheduler_service:
+        condition: service_started
+      airflow_init_service:
+        condition: service_completed_successfully
+      usda_db_service:
+        condition: service_healthy
+      pgadmin_service:
+        condition: service_started
     ports:
       - "8080:8080"  # Map port 8080 on the host to port 8080 in the container
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db:5432/${AIRFLOW_DB_NAME}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow_db_service:5432/${AIRFLOW_DB_NAME}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
     volumes:
       - airflow_dags:/opt/airflow/dags  # DAG files for Airflow tasks
@@ -222,9 +230,9 @@ services:
       - .env
   
   # Airflow Database (Postgres)
-  airflow_db:
+  airflow_db_service:
     image: postgres:16
-    container_name: airflow_db
+    container_name: airflow_db_service
     environment:
       POSTGRES_USER: ${AIRFLOW_DB_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
@@ -233,19 +241,24 @@ services:
       - airflow_postgres_data:/var/lib/postgresql/data  # Persist database data
     networks:
       - nexfitra_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER} -d ${AIRFLOW_DB_NAME}"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
     
   # Airflow Test Service
-  airflow_test:
+  airflow_test_service:
     build:
       context: ./airflow_app
       dockerfile: Dockerfile-airflow-test
-    container_name: airflow_test
+    container_name: airflow_test_service
     depends_on:
-      - airflow_test_db
+      - airflow_test_db_service
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_TEST_DB_USER}:${AIRFLOW_TEST_DB_PASSWORD}@airflow_test_db:5432/${AIRFLOW_TEST_DB_NAME}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_TEST_DB_USER}:${AIRFLOW_TEST_DB_PASSWORD}@airflow_test_db_service:5432/${AIRFLOW_TEST_DB_NAME}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_SECRET_KEY}
     volumes:
       - airflow_dags:/opt/airflow/dags
@@ -259,9 +272,9 @@ services:
 
 
   # Airflow Test Database (Postgres)
-  airflow_test_db:
+  airflow_test_db_service:
     image: postgres:16
-    container_name: airflow_test_db
+    container_name: airflow_test_db_service
     environment:
       POSTGRES_USER: ${AIRFLOW_TEST_DB_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_TEST_DB_PASSWORD}
@@ -272,9 +285,9 @@ services:
       - nexfitra_network
 
   # USDA Database (Postgres)
-  usda_db:
+  usda_db_service:
     image: postgres:16
-    container_name: usda_db
+    container_name: usda_db_service
     environment:
       POSTGRES_USER: ${USDA_DB_USER}
       POSTGRES_PASSWORD: ${USDA_DB_PASSWORD}
@@ -286,6 +299,11 @@ services:
       - ./usda_db/init-scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - nexfitra_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USDA_DB_USER} -d ${USDA_DB_NAME}"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
 # Define named volumes for persistent data storage
 volumes:

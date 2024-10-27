@@ -1,18 +1,23 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Initialize the Airflow database if it has not been done before
+echo "Checking if the Airflow database has already been initialized..."
 if [ ! -f "/opt/airflow/initialized" ]; then
   echo "Initializing the Airflow database..."
-  airflow db migrate
-  touch /opt/airflow/initialized
+  airflow db init
+  if [ $? -eq 0 ]; then
+    echo "Database initialized successfully."
+    touch /opt/airflow/initialized
+  else
+    echo "Database initialization failed."
+    exit 1
+  fi
 else
   echo "Database already initialized."
 fi
 
-# Check if the Airflow user exists, and create it if it doesn't
+echo "Checking if the Airflow admin user exists..."
 airflow users list | grep -q "${AIRFLOW_ADMIN_USERNAME}" || {
   echo "Creating Airflow admin user..."
   airflow users create \
