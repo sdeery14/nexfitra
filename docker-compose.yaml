@@ -284,26 +284,6 @@ services:
     networks:
       - nexfitra_network
 
-  # USDA Database (Postgres)
-  usda_db_service:
-    image: postgres:16
-    container_name: usda_db_service
-    environment:
-      POSTGRES_USER: ${USDA_DB_USER}
-      POSTGRES_PASSWORD: ${USDA_DB_PASSWORD}
-      POSTGRES_DB: ${USDA_DB_NAME}
-      USDA_DB_AIRFLOW_USER: ${USDA_DB_AIRFLOW_USER}
-      USDA_DB_AIRFLOW_PASSWORD: ${USDA_DB_AIRFLOW_PASSWORD}
-    volumes:
-      - usda_postgres_data:/var/lib/postgresql/data  # Persist USDA database data
-      - ./usda_db/init-scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
-    networks:
-      - nexfitra_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${USDA_DB_USER} -d ${USDA_DB_NAME}"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
 
 # Define named volumes for persistent data storage
 volumes:
@@ -317,7 +297,6 @@ volumes:
   airflow_test_postgres_data:
   airflow_logs:
   airflow_dags:
-  usda_postgres_data:
 
 # Define a custom network for the services
 networks:
