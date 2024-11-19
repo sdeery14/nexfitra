@@ -52,64 +52,66 @@ def fetch_and_store_food_data(**kwargs):
         cursor = conn.cursor()
 
         for food in data:
-            # Collect all the necessary fields (including optional ones)
-            fdc_id = food['fdcId']
-            description = food['description']
-            data_type = food['dataType']
-            publication_date = food.get('publicationDate')
-            brand_owner = food.get('brandOwner')
-            gtin_upc = food.get('gtinUpc')
-            ndb_number = food.get('ndbNumber')
-            food_code = food.get('foodCode')
+            # Check if food is a dictionary, otherwise log it
+            if isinstance(food, dict):
+                # Collect all the necessary fields (including optional ones)
+                fdc_id = food['fdcId']
+                description = food['description']
+                data_type = food['dataType']
+                publication_date = food.get('publicationDate')
+                brand_owner = food.get('brandOwner')
+                gtin_upc = food.get('gtinUpc')
+                ndb_number = food.get('ndbNumber')
+                food_code = food.get('foodCode')
 
-            # Insert food data
-            cursor.execute("""
-                INSERT INTO food (fdc_id, description, data_type, publication_date, brand_owner, gtin_upc, ndb_number, food_code)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (fdc_id) DO NOTHING;
-            """, (fdc_id, description, data_type, publication_date, brand_owner, gtin_upc, ndb_number, food_code))
+                # Insert food data
+                cursor.execute("""
+                    INSERT INTO food (fdc_id, description, data_type, publication_date, brand_owner, gtin_upc, ndb_number, food_code)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (fdc_id) DO NOTHING;
+                """, (fdc_id, description, data_type, publication_date, brand_owner, gtin_upc, ndb_number, food_code))
 
-            # Get the food_id from the food table (whether newly inserted or existing)
-            cursor.execute("""
-                SELECT food_id FROM food WHERE fdc_id = %s;
-            """, (fdc_id,))
-            food_id = cursor.fetchone()[0]
+                # Get the food_id from the food table (whether newly inserted or existing)
+                cursor.execute("""
+                    SELECT food_id FROM food WHERE fdc_id = %s;
+                """, (fdc_id,))
+                food_id = cursor.fetchone()[0]
 
-            # Insert nutrient data only if foodNutrients is present and not empty
-            if 'foodNutrients' in food and len(food['foodNutrients']) > 0:
-                for nutrient in food['foodNutrients']:
-                    nutrient_name = nutrient['name']
-                    nutrient_number = nutrient['number']
-                    derivation_code = nutrient.get('derivationCode', None)  # Some fields may be missing, use get() with default None
-                    derivation_description = nutrient.get('derivationDescription', None)
-                    amount = nutrient.get('amount', None)
-                    unit_name = nutrient.get('unitName', None)
+                # Insert nutrient data only if foodNutrients is present and not empty
+                if 'foodNutrients' in food and len(food['foodNutrients']) > 0:
+                    for nutrient in food['foodNutrients']:
+                        nutrient_name = nutrient['name']
+                        nutrient_number = nutrient['number']
+                        derivation_code = nutrient.get('derivationCode', None)
+                        derivation_description = nutrient.get('derivationDescription', None)
+                        amount = nutrient.get('amount', None)
+                        unit_name = nutrient.get('unitName', None)
 
-                    # Insert nutrient into nutrients table if it doesn't already exist
-                    cursor.execute("""
-                        INSERT INTO nutrients (nutrient_name, nutrient_number, derivation_code, derivation_description)
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT (nutrient_number) DO NOTHING;
-                    """, (nutrient_name, nutrient_number, derivation_code, derivation_description))
+                        # Insert nutrient into nutrients table if it doesn't already exist
+                        cursor.execute("""
+                            INSERT INTO nutrients (nutrient_name, nutrient_number, derivation_code, derivation_description)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT (nutrient_number) DO NOTHING;
+                        """, (nutrient_name, nutrient_number, derivation_code, derivation_description))
 
-                    # Get the nutrient_id from the nutrients table (whether newly inserted or existing)
-                    cursor.execute("""
-                        SELECT nutrient_id FROM nutrients WHERE nutrient_number = %s;
-                    """, (nutrient_number,))
-                    nutrient_id = cursor.fetchone()[0]
+                        # Get the nutrient_id from the nutrients table (whether newly inserted or existing)
+                        cursor.execute("""
+                            SELECT nutrient_id FROM nutrients WHERE nutrient_number = %s;
+                        """, (nutrient_number,))
+                        nutrient_id = cursor.fetchone()[0]
 
-                    # Insert into food_nutrients table
-                    cursor.execute("""
-                        INSERT INTO food_nutrients (food_id, nutrient_id, amount, unit_name)
-                        VALUES (%s, %s, %s, %s)
-                        ON CONFLICT DO NOTHING;
-                    """, (food_id, nutrient_id, amount, unit_name))
+                        # Insert into food_nutrients table
+                        cursor.execute("""
+                            INSERT INTO food_nutrients (food_id, nutrient_id, amount, unit_name)
+                            VALUES (%s, %s, %s, %s)
+                            ON CONFLICT DO NOTHING;
+                        """, (food_id, nutrient_id, amount, unit_name))
+                else:
+                    # Log if there are no food nutrients available for this food item
+                    print(f"No nutrient data available for food with fdc_id {fdc_id}")
             else:
-                # Log if there are no food nutrients available for this food item
-                print(f"No nutrient data available for food with fdc_id {fdc_id}")
-
-
-
+                # Log the non-dictionary food item
+                print(f"Unexpected data format for food item: {food}")
 
         conn.commit()
         cursor.close()
